@@ -50,17 +50,22 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* s) 
     return totalSize;
 }
 
-int main() {
-    CURL* curl;
-    CURLcode res;
-    std::string response;
-
-    // Asking the user for date inputs
-    std::string startDate, endDate;
+// Asking the user for date inputs
+void ask_for_dates(std::string& startDate, std::string& endDate) {
     std::cout << "Enter the start date (YYYY-MM-DD): ";
     std::cin >> startDate;
     std::cout << "Enter the end date (YYYY-MM-DD): ";
     std::cin >> endDate;
+}
+
+int main() {
+    CURL* curl;
+    CURLcode res;
+    std::string response;
+    std::string startDate, endDate;
+
+    // Get the start and end dates from the user
+    ask_for_dates(startDate, endDate);
 
     // Initializing cURL
     curl_global_init(CURL_GLOBAL_DEFAULT);
