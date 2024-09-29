@@ -55,13 +55,25 @@ int main() {
     CURLcode res;
     std::string response;
 
+    // Asking the user for date inputs
+    std::string startDate, endDate;
+    std::cout << "Enter the start date (YYYY-MM-DD): ";
+    std::cin >> startDate;
+    std::cout << "Enter the end date (YYYY-MM-DD): ";
+    std::cin >> endDate;
+
     // Initializing cURL
     curl_global_init(CURL_GLOBAL_DEFAULT);
     curl = curl_easy_init();
 
     if(curl) {
         // NASA API URL
-        std::string url = "https://api.nasa.gov/neo/rest/v1/feed?api_key=KEY_HERE";
+        std::string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
+        std::string apiKey = "KEY_HERE";
+
+        // Constructing the full URL with user-specified dates
+        std::string url = baseUrl + "?start_date=" + startDate + "&end_date=" + endDate + "&api_key=" + apiKey;
+
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
         // Callback function
@@ -75,7 +87,7 @@ int main() {
             std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
         } else {
             // Printing the response from the API
-            // Ideally, this must be parsed to extract the required information
+            // Ideally, we must parse this data
             std::cout << "Response from NASA NEO API: " << std::endl;
             std::cout << response << std::endl;
         }
