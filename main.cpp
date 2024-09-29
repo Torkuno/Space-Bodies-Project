@@ -1,4 +1,6 @@
-// main.cpp
+#include <iostream>
+#include <curl/curl.h>
+#include <string>
 #include <cmath>  // For mathematical operations
 #include <stdexcept>  // For exception handling
 
@@ -41,3 +43,46 @@ public:
 // Placeholder for gravitational constant G (for surface gravity calculation)
 const double G = 6.67430e-11;
 
+// Callback function to capture the response data
+size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* s) {
+    size_t totalSize = size * nmemb;
+    s->append(static_cast<char*>(contents), totalSize);
+    return totalSize;
+}
+
+int main() {
+    CURL* curl;
+    CURLcode res;
+    std::string response;
+
+    // Initializing cURL
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+
+    if(curl) {
+        // NASA API URL
+        std::string url = "https://api.nasa.gov/neo/rest/v1/feed?api_key=KEY_HERE";
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+        // Callback function
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+        // Performing the request
+        res = curl_easy_perform(curl);
+
+        if(res != CURLE_OK) {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+        } else {
+            // Printing the response from the API
+            // Ideally, this must be parsed to extract the required information
+            std::cout << "Response from NASA NEO API: " << std::endl;
+            std::cout << response << std::endl;
+        }
+
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+    return 0;
+}
