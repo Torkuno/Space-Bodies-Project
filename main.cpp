@@ -1,8 +1,12 @@
 #include <iostream>
 #include <curl/curl.h>
 #include <string>
-#include <cmath>  // For mathematical operations
-#include <stdexcept>  // For exception handling
+#include <cmath>
+#include <stdexcept>
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 class OrbitCalculations {
 public:
@@ -52,19 +56,54 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* s) 
 
 // Asking the user for date inputs
 void ask_for_dates(std::string& startDate, std::string& endDate) {
-    std::cout << "Enter the start date (YYYY-MM-DD): ";
+    std::cout << "Enter the search start date (YYYY-MM-DD): ";
     std::cin >> startDate;
-    std::cout << "Enter the end date (YYYY-MM-DD): ";
+    std::cout << "Enter the search end date (YYYY-MM-DD): ";
     std::cin >> endDate;
+}
+
+bool load_from_file(json& jsonData, const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Could not open the file!" << std::endl;
+        return false;
+    }
+    file >> jsonData;
+    return true;
+}
+
+void process_neo_data(const json& jsonData) {
+    try {
+        std::cout << jsonData["near_earth_objects"]["2024-09-30"][0]["id"] << std::endl;
+        while (true){
+            std::cout << "\nSelect a date (YYYY-MM-DD): " << std::endl;
+            int i=1;
+            auto& neo_objects = jsonData["near_earth_objects"];
+            for(auto& el : neo_objects.items()){
+                std::string date = el.key();
+                std::cout << i << ". " << date << std::endl;
+                i++;
+            }
+            std::cout << "(Type 'exit' to exit)" << std::endl;
+            std::string selected_date;
+            std::cin >> selected_date;
+            if (selected_date == "exit") {
+                break;
+            }
+        }
+    } catch (const std::exception& e){
+        std::cerr << "Error parsing data: " << e.what() << std::endl;
+    }
 }
 
 int main() {
     CURL* curl;
     CURLcode res;
-    std::string response;
+    std::string neo_data;
     std::string startDate, endDate;
 
     // Get the start and end dates from the user
+    std::cout << "Welcome to the NEO Analyzer!" << std::endl;
     ask_for_dates(startDate, endDate);
 
     // Initializing cURL
@@ -82,19 +121,29 @@ int main() {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
         // Callback function
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, url.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &neo_data);
 
         // Performing the request
         res = curl_easy_perform(curl);
 
+        json jsonData;
+
         if(res != CURLE_OK) {
             std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            std::cout << "Loading data from local json file..." << std::endl;
+            if (load_from_file(jsonData, "data.json")) {
+                process_neo_data(jsonData);
+            }
         } else {
-            // Printing the response from the API
-            // Ideally, we must parse this data
-            std::cout << "Response from NASA NEO API: " << std::endl;
-            std::cout << response << std::endl;
+            try{
+                jsonData = json::parse(neo_data);
+                std::cout << "\nSuccessfully fetched data from NASA NEO API!" << std::endl;
+                process_neo_data(jsonData);
+            } catch (const std::exception& e) {
+                std::cerr << "\nError parsing data: " << e.what() << std::endl;
+            }
         }
 
         curl_easy_cleanup(curl);

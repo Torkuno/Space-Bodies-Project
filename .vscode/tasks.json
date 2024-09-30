@@ -8,10 +8,10 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
+                "-std=c++11",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-lcurl"
-
             ],
             "options": {
                 "cwd": "${fileDirname}"
