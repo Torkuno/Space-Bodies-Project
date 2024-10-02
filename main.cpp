@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include "json.hpp" //This is only Required For Mac
 
 using json = nlohmann::json;
 
@@ -27,7 +28,7 @@ public:
 class CloseApproachAnalysis {
 public:
     static double calculate_minimum_distance_to_earth(double neo_params);
-};
+}; 
 
 class ImpactRiskAssessment {
 public:
