@@ -1,0 +1,26 @@
+name: Build and Run C++ Project
+
+on: [push]
+
+jobs:
+  build-on-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build and Run on Windows
+      env:
+        API_KEY: ${{ secrets.API_KEY }}
+      run: |
+        g++ -o my_program main.cpp
+        ./my_program ${API_KEY}
+
+  build-on-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build and Run on macOS
+      env:
+        API_KEY: ${{ secrets.API_KEY }}
+      run: |
+        g++ -o my_program main.cpp
+        ./my_program ${API_KEY}

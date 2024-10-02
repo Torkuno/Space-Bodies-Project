@@ -6,9 +6,34 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include "json.hpp" //This is only Required For Mac
+#include <cstdlib>
 
 using namespace nlohmann;
 using namespace std;
+
+void loadEnvFile(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Could not open .env file" << std::endl;
+        return;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        // Split line into key=value
+        auto delimiterPos = line.find('=');
+        std::string key = line.substr(0, delimiterPos);
+        std::string value = line.substr(delimiterPos + 1);
+
+
+#ifdef _WIN32
+        _putenv_s(key.c_str(), value.c_str());  // For Windows
+#else
+        setenv(key.c_str(), value.c_str(), 1);  // For Linux/macOS
+#endif
+    }
+    file.close();
+}
 
 class OrbitCalculations {
 public:
@@ -29,7 +54,7 @@ public:
 class CloseApproachAnalysis {
 public:
     static double calculate_minimum_distance_to_earth(double neo_params);
-}; 
+};
 
 class ImpactRiskAssessment {
 public:
@@ -104,6 +129,7 @@ int main() {
     CURLcode res;
     string neo_data;
     string startDate, endDate;
+    loadEnvFile(".env");
 
     // Get the start and end dates from the user
     cout << "\nWelcome to the NEO Analyzer!" << endl;
@@ -115,8 +141,9 @@ int main() {
 
     if(curl) {
         // NASA API URL
-        string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
-        string apiKey = "WxdEJIWvfahS8lgLY2rSYX7pBeoNfKxWU6os4Ch5";
+        const string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
+        const char* apiKeyEnv = std::getenv("API_KEY");
+        string apiKey = apiKeyEnv;
 
         // Constructing the full URL with user-specified dates
         string url = baseUrl + "?start_date=" + startDate + "&end_date=" + endDate + "&api_key=" + apiKey;
