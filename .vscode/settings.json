@@ -62,6 +62,12 @@
         "iomanip": "cpp",
         "ranges": "cpp",
         "sstream": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "condition_variable": "cpp",
+        "set": "cpp",
+        "mutex": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp",
+        "thread": "cpp"
     }
 }
