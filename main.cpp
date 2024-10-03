@@ -4,11 +4,24 @@
 #include <cmath>
 #include <stdexcept>
 #include <fstream>
-#include <nlohmann/json.hpp>
-#include "json.hpp" //This is only Required For Mac
 #include <cstdlib>
 
-using namespace nlohmann;
+// Conditional compilation for different platforms
+// Include the JSON library
+#if defined(_WIN32) || defined(_WIN64)
+    #include <nlohmann/json.hpp>
+    #define OS_NAME "Windows"
+    using namespace nlohmann;
+#elif defined(__APPLE__) || defined(__MACH__)
+    #include "json.hpp" // Include for macOS
+    #define OS_NAME "macOS"
+#elif defined(__linux__)
+    #include "json.hpp" // Include for Linux
+    #define OS_NAME "Linux"
+#else
+    #define OS_NAME "Unknown platform"
+#endif
+
 using namespace std;
 
 void loadEnvFile(const std::string& filename) {
