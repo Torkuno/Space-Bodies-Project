@@ -11,7 +11,6 @@
 #if defined(_WIN32) || defined(_WIN64)
     #include <nlohmann/json.hpp>
     #define OS_NAME "Windows"
-    using namespace nlohmann;
 #elif defined(__APPLE__) || defined(__MACH__)
     #include "json.hpp" // Include for macOS
     #define OS_NAME "macOS"
@@ -22,6 +21,7 @@
     #define OS_NAME "Unknown platform"
 #endif
 
+ using namespace nlohmann;
 using namespace std;
 
 void loadEnvFile(const std::string& filename) {
