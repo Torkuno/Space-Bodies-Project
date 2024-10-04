@@ -84,6 +84,57 @@ public:
     static double calculate_surface_gravity(double mass, double radius);
 };
 
+void output_neo_data(const json& neo) {
+    try {
+        // Extract basic information
+        string id = neo["id"];
+        string name = neo["name"];
+        string nasa_jpl_url = neo["nasa_jpl_url"];
+        double absolute_magnitude = neo["absolute_magnitude_h"];
+        
+        cout << "NEO ID: " << id << endl;
+        cout << "Name: " << name << endl;
+        cout << "NASA JPL URL: " << nasa_jpl_url << endl;
+        cout << "Absolute Magnitude (H): " << absolute_magnitude << endl;
+
+        // Extract diameter information
+        auto diameter = neo["estimated_diameter"];
+        cout << "\nEstimated Diameter:" << endl;
+        cout << "Kilometers: " << diameter["kilometers"]["estimated_diameter_min"] << " - "
+             << diameter["kilometers"]["estimated_diameter_max"] << " km" << endl;
+        cout << "Meters: " << diameter["meters"]["estimated_diameter_min"] << " - "
+             << diameter["meters"]["estimated_diameter_max"] << " m" << endl;
+        cout << "Miles: " << diameter["miles"]["estimated_diameter_min"] << " - "
+             << diameter["miles"]["estimated_diameter_max"] << " miles" << endl;
+        cout << "Feet: " << diameter["feet"]["estimated_diameter_min"] << " - "
+             << diameter["feet"]["estimated_diameter_max"] << " feet" << endl;
+
+        // Check if it's potentially hazardous
+        bool is_potentially_hazardous = neo["is_potentially_hazardous_asteroid"];
+        cout << "\nIs Potentially Hazardous: " << (is_potentially_hazardous ? "Yes" : "No") << endl;
+
+        // Extract close approach data
+        auto close_approach = neo["close_approach_data"][0];  // Get the first close approach data
+        cout << "\nClose Approach Data:" << endl;
+        cout << "Close Approach Date: " << close_approach["close_approach_date"] << endl;
+        cout << "Full Close Approach Date: " << close_approach["close_approach_date_full"] << endl;
+        cout << "Relative Velocity (km/s): " << close_approach["relative_velocity"]["kilometers_per_second"] << " km/s" << endl;
+        cout << "Relative Velocity (km/h): " << close_approach["relative_velocity"]["kilometers_per_hour"] << " km/h" << endl;
+        cout << "Miss Distance (Astronomical): " << close_approach["miss_distance"]["astronomical"] << " au" << endl;
+        cout << "Miss Distance (Lunar): " << close_approach["miss_distance"]["lunar"] << " lunar distances" << endl;
+        cout << "Miss Distance (Kilometers): " << close_approach["miss_distance"]["kilometers"] << " km" << endl;
+        cout << "Miss Distance (Miles): " << close_approach["miss_distance"]["miles"] << " miles" << endl;
+        cout << "Orbiting Body: " << close_approach["orbiting_body"] << endl;
+
+        // Check if it's a Sentry object
+        bool is_sentry_object = neo["is_sentry_object"];
+        cout << "\nIs Sentry Object: " << (is_sentry_object ? "Yes" : "No") << endl;
+
+    } catch (const exception& e) {
+        cerr << "Error processing NEO data: " << e.what() << endl;
+    }
+}
+
 // Placeholder for gravitational constant G (for surface gravity calculation)
 const double G = 6.67430e-11;
 
@@ -114,28 +165,62 @@ bool load_from_file(json& jsonData, const string& filename) {
 
 void process_neo_data(const json& jsonData) {
     try {
-        // DEBUGGING: Print ID
-        // cout << jsonData["near_earth_objects"]["2024-09-30"][0]["id"] << endl;
-        while (true){
-            cout << "\nSelect a date (YYYY-MM-DD): " << endl;
-            int i=1;
-            auto& neo_objects = jsonData["near_earth_objects"];
-            for(auto& el : neo_objects.items()){
-                string date = el.key();
-                cout << i << ". " << date << endl;
-                i++;
-            }
-            cout << "(Type 'exit' to exit)" << endl;
+        auto& neo_objects = jsonData["near_earth_objects"];
+        
+        // List all available dates with NEO data
+        vector<string> available_dates;
+        cout << "\nAvailable dates with NEO data:\n";
+        int i = 1;
+        for (auto& el : neo_objects.items()) {
+            string date = el.key();
+            available_dates.push_back(date);  // Store available dates
+            cout << i << ". " << date << endl;
+            i++;
+        }
+
+        while (true) {
+            cout << "\nEnter a date from the list above (YYYY-MM-DD), or type 'exit' to quit: ";
             string selected_date;
             cin >> selected_date;
+
             if (selected_date == "exit") {
                 break;
             }
+
+            // Check if the entered date is in the list of available dates
+            if (find(available_dates.begin(), available_dates.end(), selected_date) != available_dates.end()) {
+                // Get the NEOs for the selected date
+                auto neos = neo_objects[selected_date];
+                if (!neos.empty()) {
+                    // If multiple NEOs exist, allow user to choose one
+                    cout << "\nThere are " << neos.size() << " NEOs for the date " << selected_date << ".\n";
+                    for (size_t j = 0; j < neos.size(); j++) {
+                        cout << j + 1 << ". " << neos[j]["name"] << endl;
+                    }
+
+                    int neo_choice;
+                    cout << "\nSelect a NEO by number: ";
+                    cin >> neo_choice;
+
+                    // Validate user choice
+                    if (neo_choice > 0 && neo_choice <= neos.size()) {
+                        // Output data for the selected NEO
+                        output_neo_data(neos[neo_choice - 1]);  // Call the function to output NEO data
+                    } else {
+                        cout << "Invalid choice, please select a valid NEO number." << endl;
+                    }
+                } else {
+                    cout << "No NEOs found for the selected date." << endl;
+                }
+            } else {
+                cout << "Invalid date or no data available for the selected date." << endl;
+            }
         }
-    } catch (const exception& e){
+    } catch (const exception& e) {
         cerr << "Error parsing data: " << e.what() << endl;
     }
 }
+
 
 int main() {
     CURL* curl;
