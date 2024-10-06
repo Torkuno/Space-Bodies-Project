@@ -33,11 +33,17 @@ int main() {
             return 1;  // Exit if both API and file loading fail
         }
 
-        process_neo_data(jsonData, selectedDate);  // Process data from file
+        nlohmann::json selectedNeoJson = process_neo_data(jsonData, selectedDate);  // Process data from file
     } else {
         try {
             nlohmann::json jsonData = nlohmann::json::parse(neo_data);  // Parse the JSON response
-            process_neo_data(jsonData, selectedDate);  // Process the data fetched from API
+            nlohmann::json selectedNeoJson = process_neo_data(jsonData, selectedDate);  // Process the data fetched from API
+
+            // print selectedNeoJson
+            cout << "Selected NEO data from file: " << endl;
+            cout <<"--------------------------------" << endl;
+            cout << selectedNeoJson.dump(4) << endl;
+
         } catch (const exception& e) {
             cerr << "Error parsing data: " << e.what() << endl;
             return 1;

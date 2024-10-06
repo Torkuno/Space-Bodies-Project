@@ -95,7 +95,7 @@ void output_neo_data(const json& neo) {
 }
 
 // Process NEO data for the selected date
-void process_neo_data(const json& jsonData, const string& selectedDate) {
+nlohmann::json process_neo_data(const json& jsonData, const string& selectedDate) {
     try {
         auto& neo_objects = jsonData["near_earth_objects"];
         if (neo_objects.contains(selectedDate)) {
@@ -112,15 +112,20 @@ void process_neo_data(const json& jsonData, const string& selectedDate) {
 
             if (neo_choice > 0 && neo_choice <= neos.size()) {
                 output_neo_data(neos[neo_choice - 1]);
+                return neos[neo_choice - 1]; // Return the selected NEO JSON object
             } else {
                 cout << "Invalid choice, please select a valid NEO number." << endl;
             }
         } else {
             cout << "No NEO data available for the selected date." << endl;
+            return {}; // Return an empty JSON object
         }
     } catch (const exception& e) {
         cerr << "Error processing data: " << e.what() << endl;
+        return {}; // Return an empty JSON object
     }
+    // Default return in case none of the above conditions are met
+    return {};
 }
 
 // Fetch NEO data for a single date
