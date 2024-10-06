@@ -91,7 +91,7 @@ void output_neo_data(const json& neo) {
         string name = neo["name"];
         string nasa_jpl_url = neo["nasa_jpl_url"];
         double absolute_magnitude = neo["absolute_magnitude_h"];
-        
+
         cout << "NEO ID: " << id << endl;
         cout << "Name: " << name << endl;
         cout << "NASA JPL URL: " << nasa_jpl_url << endl;
@@ -166,7 +166,7 @@ bool load_from_file(json& jsonData, const string& filename) {
 void process_neo_data(const json& jsonData) {
     try {
         auto& neo_objects = jsonData["near_earth_objects"];
-        
+
         // List all available dates with NEO data
         vector<string> available_dates;
         cout << "\nAvailable dates with NEO data:\n";
@@ -241,7 +241,11 @@ int main() {
         // NASA API URL
         const string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
         const char* apiKeyEnv = std::getenv("API_KEY");
-        string apiKey = apiKeyEnv;
+        string apiKey = apiKeyEnv ? apiKeyEnv : "";
+        if (apiKey.empty()) {
+            cerr << "API key is missing. Please set the API_KEY environment variable." << endl;
+            return 1;
+        }
 
         // Constructing the full URL with user-specified dates
         string url = baseUrl + "?start_date=" + startDate + "&end_date=" + endDate + "&api_key=" + apiKey;
