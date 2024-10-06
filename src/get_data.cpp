@@ -111,7 +111,7 @@ nlohmann::json process_neo_data(const json& jsonData, const string& selectedDate
             cin >> neo_choice;
 
             if (neo_choice > 0 && neo_choice <= neos.size()) {
-                output_neo_data(neos[neo_choice - 1]);
+                // output_neo_data(neos[neo_choice - 1]); //-> for debugging
                 return neos[neo_choice - 1]; // Return the selected NEO JSON object
             } else {
                 cout << "Invalid choice, please select a valid NEO number." << endl;

@@ -6,11 +6,6 @@ using namespace std;
 
 
 
-
-
-
-
-
 //classes
 class SpaceBody {
 public:
@@ -142,7 +137,7 @@ int main() {
 
     // Ask the user for a single date
     string selectedDate;
-    cout << "\nWelcome to the NEO Analyzer!" << endl;
+    cout << "\n\nWelcome to the NEO Analyzer!" << endl;
     cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
     cin >> selectedDate;
 
@@ -177,31 +172,34 @@ int main() {
             jsonData = nlohmann::json::parse(neo_data);  // Parse the JSON response
             selectedNeoJson = process_neo_data(jsonData, selectedDate);  // Process the data fetched from API
 
+            /*
             //debugging
             std::cout << "Asteroid JSON Data: " << selectedNeoJson.dump(4) << std::endl;
             if (!selectedNeoJson["estimated_diameter"]["kilometers"]["estimated_diameter_min"].is_number()) {
                 std::cerr << "Error: estimated_diameter_min is not a number." << std::endl;
             }
+            */
 
             // Create asteroid class object
             Asteroid asteroid1(selectedNeoJson);
-            cout << "--------------" << endl;
+            cout << "\n\n--------------" << endl;
             asteroid1.printInfo();
 
             // Create another asteroid object, ask user for data
             string selectedDate2;
-            cout << "\nPlease enter data for another asteroid:" << endl;
+            cout << "\nEnter a date (YYYY-MM-DD) to search for NEOs: ";
             cin >> selectedDate2;
             string neo_data2 = fetch_neo_data(selectedDate2, apiKey);
             jsonData = nlohmann::json::parse(neo_data2);
             selectedNeoJson = process_neo_data(jsonData, selectedDate2);
             Asteroid asteroid2(selectedNeoJson);
-            cout << "--------------" << endl;
+            cout << "\n\n--------------" << endl;
             asteroid2.printInfo();
 
             // Add the two asteroids
+            cout << "\n\n" << endl;
             Asteroid combinedAsteroid = asteroid1 + asteroid2;
-            cout << "--------------" << endl;
+            cout << "\n\n------combine asteroid--------\n" << endl;
             combinedAsteroid.printInfo();
 
         } catch (const exception& e) {
