@@ -12,4 +12,4 @@ void output_neo_data(const nlohmann::json& neo);
 nlohmann::json process_neo_data(const nlohmann::json& jsonData, const std::string& selectedDate);
 std::string fetch_neo_data(const std::string& date, const std::string& apiKey);
 
-#endif // GET_DATA_H
+#endif

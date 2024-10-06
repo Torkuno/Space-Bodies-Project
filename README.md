@@ -48,4 +48,4 @@ g++ main.o main_test.o -lgtest -lgtest_main -lpthread -o test_executable
 
 # Run main.cpp
 
-g++ main.cpp get_data.cpp -o main.exe -lcurl
+g++ main.cpp src/get_data.cpp src/classes.cpp -o main.exe -lcurl
