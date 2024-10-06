@@ -2,3 +2,4 @@
 *.exe
 .env
 main.dSYM
+main
