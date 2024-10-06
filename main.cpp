@@ -44,6 +44,19 @@ private:
 
 class Asteroid : public SpaceBody {
 public:
+    // copy constructor
+    Asteroid(const Asteroid& other) : SpaceBody(other.name, other.diameter),
+        id(other.id),
+        nasa_jpl_url(other.nasa_jpl_url),
+        absolute_magnitude(other.absolute_magnitude),
+        minDiameterKm(other.minDiameterKm),
+        maxDiameterKm(other.maxDiameterKm),
+        isDangerous(other.isDangerous),
+        closeApproachDate(other.closeApproachDate),
+        relativeVelocityKmPerS(other.relativeVelocityKmPerS),
+        missDistanceKm(other.missDistanceKm), mass(other.mass) {
+        std::cout << "Asteroid " << name << " copied." << std::endl;
+        }
     // Asteroid constructor, extracts data from the JSON object
     Asteroid(const nlohmann::json& asteroidData) : SpaceBody(asteroidData["name"], asteroidData["estimated_diameter"]["kilometers"]["estimated_diameter_min"]),
           id(asteroidData["id"]),
@@ -76,30 +89,32 @@ public:
         std::cout << "Close Approach Date: " << closeApproachDate << std::endl;
         std::cout << "Relative Velocity: " << relativeVelocityKmPerS << " km/s" << std::endl;
         std::cout << "Miss Distance: " << missDistanceKm << " km" << std::endl;
-        std::cout << "Mass: " << mass << " kg" << std::endl;
+        std::cout << "Mass: " << mass << " g" << std::endl;
     }
 
     // Operator overload for adding two Asteroids
     // add two asteroids to see if now they are dangerous
     Asteroid operator+(const Asteroid& other) const {
-        nlohmann::json combinedData; // This will represent the new asteroid's data
+        // Create a copy of the current asteroid
+        Asteroid combinedAsteroid(*this);
 
-        combinedData["name"] = name + " & " + other.name; // Combine names
-        combinedData["estimated_diameter"]["kilometers"]["estimated_diameter_min"] =
-            minDiameterKm + other.minDiameterKm; // Combine minimum diameters
-        combinedData["estimated_diameter"]["kilometers"]["estimated_diameter_max"] =
-            maxDiameterKm + other.maxDiameterKm; // Combine maximum diameters
-        combinedData["mass"] = mass + other.mass; // Combine masses
-        combinedData["relative_velocity"]["kilometers_per_second"] =
-            relativeVelocityKmPerS + other.relativeVelocityKmPerS; // Combine speeds
+        // Modify necessary fields
+        combinedAsteroid.name = name + " & " + other.name; // Combine names
+        // Combine diameters
+        combinedAsteroid.minDiameterKm = minDiameterKm + other.minDiameterKm;
+        combinedAsteroid.maxDiameterKm = maxDiameterKm + other.maxDiameterKm;
+        // Combine masses
+        combinedAsteroid.mass = mass + other.mass;
+        // Combine relative velocities
+        combinedAsteroid.relativeVelocityKmPerS = relativeVelocityKmPerS + other.relativeVelocityKmPerS;
+        // Combine miss distances
+        combinedAsteroid.missDistanceKm = missDistanceKm + other.missDistanceKm;
+        // Update the potentially hazardous status
+        combinedAsteroid.isDangerous =
+            ((combinedAsteroid.minDiameterKm > 280) || (combinedAsteroid.relativeVelocityKmPerS > 5.0));
 
-        // Calculate if the combined asteroid is potentially hazardous
-        double combineddiameter = (minDiameterKm + other.minDiameterKm); // Average of min diameters
-        bool isPotentiallyHazardous = (combineddiameter > 280) || (combinedData["relative_velocity"]["kilometers_per_second"] > 5.0); // critical values
-
-        combinedData["is_potentially_hazardous_asteroid"] = isPotentiallyHazardous;
-
-        return Asteroid(combinedData); // Create a new Asteroid from combined data
+        // Return the combined asteroid
+        return combinedAsteroid;
     }
 
     // Destructor
@@ -201,6 +216,7 @@ int main() {
             Asteroid combinedAsteroid = asteroid1 + asteroid2;
             cout << "\n\n------combine asteroid--------\n" << endl;
             combinedAsteroid.printInfo();
+            cout << "\n\n------destructor--------\n" << endl;
 
         } catch (const exception& e) {
             cerr << "Error parsing data: " << e.what() << endl;
