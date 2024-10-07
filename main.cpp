@@ -1,197 +1,228 @@
 #include <iostream>
-#include <curl/curl.h>
 #include <string>
-#include <cmath>
-#include <stdexcept>
-#include <fstream>
-#include <cstdlib>
+#include "src/get_data.h"
 
-// Conditional compilation for different platforms
-// Include the JSON library
-#if defined(_WIN32) || defined(_WIN64)
-    #include <nlohmann/json.hpp>
-    #define OS_NAME "Windows"
-#elif defined(__APPLE__) || defined(__MACH__)
-    #include "json.hpp" // Include for macOS
-    #define OS_NAME "macOS"
-#elif defined(__linux__)
-    #include "json.hpp" // Include for Linux
-    #define OS_NAME "Linux"
-#else
-    #define OS_NAME "Unknown platform"
-#endif
-
-using namespace nlohmann;
 using namespace std;
 
-void loadEnvFile(const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Could not open .env file" << std::endl;
-        return;
+
+
+//classes
+class SpaceBody {
+public:
+    SpaceBody(const std::string& name, double diameter) : name(name), diameter(diameter) {}
+
+    virtual void printInfo() {
+        std::cout << "Name: " << name << ", diameter: " << diameter << std::endl;
     }
 
-    std::string line;
-    while (std::getline(file, line)) {
-        // Split line into key=value
-        auto delimiterPos = line.find('=');
-        std::string key = line.substr(0, delimiterPos);
-        std::string value = line.substr(delimiterPos + 1);
-
-
-#ifdef _WIN32
-        _putenv_s(key.c_str(), value.c_str());  // For Windows
-#else
-        setenv(key.c_str(), value.c_str(), 1);  // For Linux/macOS
-#endif
+    // Destructor
+    virtual ~SpaceBody() {
+        std::cout << "Space body " << name << " destroyed." << std::endl;
     }
-    file.close();
-}
 
-class OrbitCalculations {
-public:
-    // Nested class for perihelion and aphelion calculations
-    class PerihelionAphelion {
-    public:
-        static double calculate_perihelion(double semi_major_axis, double eccentricity);
-        static double calculate_aphelion(double semi_major_axis, double eccentricity);
-    };
-
-    // Nested class for velocity calculations
-    class Velocity {
-    public:
-        static double calculate_velocity_at_perihelion(double semi_major_axis);
-    };
+protected:
+    std::string name;
+    double diameter;
 };
 
-class CloseApproachAnalysis {
+class Planet : public SpaceBody {
 public:
-    static double calculate_minimum_distance_to_earth(double neo_params);
-};
+    Planet(const std::string& name, double diameter, double mass) : SpaceBody(name, diameter), mass(mass) {}
 
-class ImpactRiskAssessment {
-public:
-    static double calculate_kinetic_energy(double mass, double velocity);
-};
-
-class OrbitIntersection {
-public:
-    static bool check_orbit_intersection(double neo_orbit_params, double earth_orbit_params);
-};
-
-class SurfaceGravity {
-public:
-    static double calculate_surface_gravity(double mass, double radius);
-};
-
-// Placeholder for gravitational constant G (for surface gravity calculation)
-const double G = 6.67430e-11;
-
-// Callback function to capture the response data
-size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* s) {
-    size_t totalSize = size * nmemb;
-    s->append(static_cast<char*>(contents), totalSize);
-    return totalSize;
-}
-
-// Asking the user for date inputs
-void ask_for_dates(string& startDate, string& endDate) {
-    cout << "Enter the search start date (YYYY-MM-DD): ";
-    cin >> startDate;
-    cout << "Enter the search end date (YYYY-MM-DD): ";
-    cin >> endDate;
-}
-
-bool load_from_file(json& jsonData, const string& filename) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Could not open the file!" << endl;
-        return false;
+    void printInfo() override {
+        std::cout << "Name: " << name << ", Mass: " << mass << ", diameter: " << diameter << std::endl;
     }
-    file >> jsonData;
-    return true;
-}
 
-void process_neo_data(const json& jsonData) {
-    try {
-        // DEBUGGING: Print ID
-        // cout << jsonData["near_earth_objects"]["2024-09-30"][0]["id"] << endl;
-        while (true){
-            cout << "\nSelect a date (YYYY-MM-DD): " << endl;
-            int i=1;
-            auto& neo_objects = jsonData["near_earth_objects"];
-            for(auto& el : neo_objects.items()){
-                string date = el.key();
-                cout << i << ". " << date << endl;
-                i++;
-            }
-            cout << "(Type 'exit' to exit)" << endl;
-            string selected_date;
-            cin >> selected_date;
-            if (selected_date == "exit") {
-                break;
-            }
+    // Destructor
+    ~Planet() {
+        std::cout << "Planet " << name << " destroyed." << std::endl;
+    }
+
+private:
+    double mass;
+};
+
+class Asteroid : public SpaceBody {
+public:
+    // copy constructor
+    Asteroid(const Asteroid& other) : SpaceBody(other.name, other.diameter),
+        id(other.id),
+        nasa_jpl_url(other.nasa_jpl_url),
+        absolute_magnitude(other.absolute_magnitude),
+        minDiameterKm(other.minDiameterKm),
+        maxDiameterKm(other.maxDiameterKm),
+        isDangerous(other.isDangerous),
+        closeApproachDate(other.closeApproachDate),
+        relativeVelocityKmPerS(other.relativeVelocityKmPerS),
+        missDistanceKm(other.missDistanceKm), mass(other.mass) {
+        std::cout << "Asteroid " << name << " copied." << std::endl;
         }
-    } catch (const exception& e){
-        cerr << "Error parsing data: " << e.what() << endl;
+    // Asteroid constructor, extracts data from the JSON object
+    Asteroid(const nlohmann::json& asteroidData) : SpaceBody(asteroidData["name"], asteroidData["estimated_diameter"]["kilometers"]["estimated_diameter_min"]),
+          id(asteroidData["id"]),
+          nasa_jpl_url(asteroidData["nasa_jpl_url"]),
+          absolute_magnitude(asteroidData["absolute_magnitude_h"]),
+          isDangerous(asteroidData["is_potentially_hazardous_asteroid"])
+    {
+        // Extract diameter information
+        auto diameter = asteroidData["estimated_diameter"];
+        minDiameterKm = diameter["kilometers"]["estimated_diameter_min"];
+        maxDiameterKm = diameter["kilometers"]["estimated_diameter_max"];
+
+        // Extract close approach data
+        auto close_approach = asteroidData["close_approach_data"][0];
+        closeApproachDate = close_approach["close_approach_date"];
+        relativeVelocityKmPerS = std::stod(close_approach["relative_velocity"]["kilometers_per_second"].get<std::string>());
+        missDistanceKm = std::stod(close_approach["miss_distance"]["kilometers"].get<std::string>());
+
+        // calculate approx mass
+        mass = calculateMass();
     }
-}
+
+    void printInfo() override {
+        std::cout << "Asteroid ID: " << id << std::endl;
+        std::cout << "Name: " << name << std::endl;
+        std::cout << "NASA JPL URL: " << nasa_jpl_url << std::endl;
+        std::cout << "Absolute Magnitude (H): " << absolute_magnitude << std::endl;
+        std::cout << "Diameter (Min): " << minDiameterKm << " km, Max: " << maxDiameterKm << " km" << std::endl;
+        std::cout << "Is Potentially Hazardous: " << (isDangerous ? "Yes" : "No") << std::endl;
+        std::cout << "Close Approach Date: " << closeApproachDate << std::endl;
+        std::cout << "Relative Velocity: " << relativeVelocityKmPerS << " km/s" << std::endl;
+        std::cout << "Miss Distance: " << missDistanceKm << " km" << std::endl;
+        std::cout << "Mass: " << mass << " g" << std::endl;
+    }
+
+    // Operator overload for adding two Asteroids
+    // add two asteroids to see if now they are dangerous
+    Asteroid operator+(const Asteroid& other) const {
+        // Create a copy of the current asteroid
+        Asteroid combinedAsteroid(*this);
+
+        // Modify necessary fields
+        combinedAsteroid.name = name + " & " + other.name; // Combine names
+        // Combine diameters
+        combinedAsteroid.minDiameterKm = minDiameterKm + other.minDiameterKm;
+        combinedAsteroid.maxDiameterKm = maxDiameterKm + other.maxDiameterKm;
+        // Combine masses
+        combinedAsteroid.mass = mass + other.mass;
+        // Combine relative velocities
+        combinedAsteroid.relativeVelocityKmPerS = relativeVelocityKmPerS + other.relativeVelocityKmPerS;
+        // Combine miss distances
+        combinedAsteroid.missDistanceKm = missDistanceKm + other.missDistanceKm;
+        // Update the potentially hazardous status
+        combinedAsteroid.isDangerous =
+            ((combinedAsteroid.minDiameterKm > 280) || (combinedAsteroid.relativeVelocityKmPerS > 5.0));
+
+        // Return the combined asteroid
+        return combinedAsteroid;
+    }
+
+    // Destructor
+    ~Asteroid() {
+        std::cout << "Asteroid " << name << " destroyed." << std::endl;
+    }
+
+private:
+    // New member variables for the asteroid
+    std::string id;
+    std::string nasa_jpl_url;
+    double absolute_magnitude;
+    double minDiameterKm;
+    double maxDiameterKm;
+    bool isDangerous;
+    std::string closeApproachDate;
+    double relativeVelocityKmPerS; //std::string
+    double missDistanceKm;         //std::string
+    double mass;
+    double calculateMass() const {
+        return (minDiameterKm + maxDiameterKm) * 1.0; // Placeholder calculation
+    }
+};
+
+
+
+
+
+
+
+
 
 int main() {
-    CURL* curl;
-    CURLcode res;
-    string neo_data;
-    string startDate, endDate;
     loadEnvFile(".env");
 
-    // Get the start and end dates from the user
-    cout << "\nWelcome to the NEO Analyzer!" << endl;
-    ask_for_dates(startDate, endDate);
+    // Ask the user for a single date
+    string selectedDate;
+    cout << "\n\nWelcome to the NEO Analyzer!" << endl;
+    cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
+    cin >> selectedDate;
 
-    // Initializing cURL
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    curl = curl_easy_init();
+    const char* apiKeyEnv = std::getenv("API_KEY");  // Get API key from environment variable
+    string apiKey = apiKeyEnv ? apiKeyEnv : "";      // If environment variable is missing, use empty string
 
-    if(curl) {
-        // NASA API URL
-        const string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
-        const char* apiKeyEnv = std::getenv("API_KEY");
-        string apiKey = apiKeyEnv;
-
-        // Constructing the full URL with user-specified dates
-        string url = baseUrl + "?start_date=" + startDate + "&end_date=" + endDate + "&api_key=" + apiKey;
-
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-
-        // Callback function
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &neo_data);
-
-        // Performing the request
-        res = curl_easy_perform(curl);
-
-        json jsonData;
-
-        if(res != CURLE_OK) {
-            cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << endl;
-            cout << "Loading data from local json file..." << endl;
-            if (load_from_file(jsonData, "data.json")) {
-                process_neo_data(jsonData);
-            }
-        } else {
-            try{
-                jsonData = json::parse(neo_data);
-                cout << "\nSuccessfully fetched data from NASA NEO API!" << endl;
-                process_neo_data(jsonData);
-            } catch (const exception& e) {
-                cerr << "\nError parsing data: " << e.what() << endl;
-            }
-        }
-
-        curl_easy_cleanup(curl);
+    if (apiKey.empty()) {
+        cerr << "API key is missing. Please set the API_KEY environment variable." << endl;
+        return 1;  // Exit program if API key is not set
     }
 
-    curl_global_cleanup();
+    // Declare jsonData and selectedNeoJson outside the if-else blocks
+    nlohmann::json jsonData;  // JSON object to store loaded data
+    nlohmann::json selectedNeoJson; // To hold the selected NEO data
+
+    // Fetch NEO data for the selected date and the API key
+    string neo_data = fetch_neo_data(selectedDate, apiKey);
+
+    if (neo_data.empty()) {
+        cerr << "Failed to fetch data from NASA API. Loading data from file..." << endl;
+
+        // If fetching from API fails, load from file
+        if (!load_from_file(jsonData, "data.json")) {
+            cerr << "Failed to load data from file." << endl;
+            return 1;  // Exit if both API and file loading fail
+        }
+
+        selectedNeoJson = process_neo_data(jsonData, selectedDate);  // Process data from file
+
+    } else {
+        try {
+            jsonData = nlohmann::json::parse(neo_data);  // Parse the JSON response
+            selectedNeoJson = process_neo_data(jsonData, selectedDate);  // Process the data fetched from API
+
+            /*
+            //debugging
+            std::cout << "Asteroid JSON Data: " << selectedNeoJson.dump(4) << std::endl;
+            if (!selectedNeoJson["estimated_diameter"]["kilometers"]["estimated_diameter_min"].is_number()) {
+                std::cerr << "Error: estimated_diameter_min is not a number." << std::endl;
+            }
+            */
+
+            // Create asteroid class object
+            Asteroid asteroid1(selectedNeoJson);
+            cout << "\n\n--------------" << endl;
+            asteroid1.printInfo();
+
+            // Create another asteroid object, ask user for data
+            string selectedDate2;
+            cout << "\nEnter a date (YYYY-MM-DD) to search for NEOs: ";
+            cin >> selectedDate2;
+            string neo_data2 = fetch_neo_data(selectedDate2, apiKey);
+            jsonData = nlohmann::json::parse(neo_data2);
+            selectedNeoJson = process_neo_data(jsonData, selectedDate2);
+            Asteroid asteroid2(selectedNeoJson);
+            cout << "\n\n--------------" << endl;
+            asteroid2.printInfo();
+
+            // Add the two asteroids
+            cout << "\n\n" << endl;
+            Asteroid combinedAsteroid = asteroid1 + asteroid2;
+            cout << "\n\n------combine asteroid--------\n" << endl;
+            combinedAsteroid.printInfo();
+            cout << "\n\n------destructor--------\n" << endl;
+
+        } catch (const exception& e) {
+            cerr << "Error parsing data: " << e.what() << endl;
+            return 1;
+        }
+    }
+
     return 0;
 }
