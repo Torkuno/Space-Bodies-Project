@@ -3,9 +3,11 @@
 #include <fstream>
 #include <curl/curl.h>
 #include <cstdlib>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
+// Loads environment variables from a .env file
 void loadEnvFile(const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -29,15 +31,15 @@ void loadEnvFile(const string& filename) {
     file.close();
 }
 
-// Callback function to capture the response data
+// Callback function to capture the response data from cURL
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* s) {
     size_t totalSize = size * nmemb;
     s->append(static_cast<char*>(contents), totalSize);
     return totalSize;
 }
 
-// Load data from file
-bool load_from_file(json& jsonData, const string& filename) {
+// Load data from a JSON file
+bool load_from_file(nlohmann::json& jsonData, const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
         cerr << "Could not open the file!" << endl;
@@ -47,7 +49,8 @@ bool load_from_file(json& jsonData, const string& filename) {
     return true;
 }
 
-void output_neo_data(const json& neo) {
+// Outputs Near-Earth Object data to the console
+void output_neo_data(const nlohmann::json& neo) {
     try {
         // Extract basic information
         string id = neo["id"];
@@ -94,8 +97,8 @@ void output_neo_data(const json& neo) {
     }
 }
 
-// Process NEO data for the selected date
-json process_neo_data(const json& jsonData, const string& selectedDate) {
+// Processes NEO data for the selected date
+nlohmann::json process_neo_data(const nlohmann::json& jsonData, const string& selectedDate) {
     try {
         auto& neo_objects = jsonData["near_earth_objects"];
         if (neo_objects.contains(selectedDate)) {
@@ -111,8 +114,7 @@ json process_neo_data(const json& jsonData, const string& selectedDate) {
             cin >> neo_choice;
 
             if (neo_choice > 0 && neo_choice <= neos.size()) {
-                // output_neo_data(neos[neo_choice - 1]); //-> for debugging
-                return neos[neo_choice - 1]; // Return the selected NEO JSON object
+                return neos[neo_choice - 1];  // Return the selected NEO JSON object
             } else {
                 cout << "Invalid choice, please select a valid NEO number." << endl;
             }
@@ -124,11 +126,10 @@ json process_neo_data(const json& jsonData, const string& selectedDate) {
         cerr << "Error processing data: " << e.what() << endl;
         return {}; // Return an empty JSON object
     }
-    // Default return in case none of the above conditions are met
     return {};
 }
 
-// Fetch NEO data for a single date
+// Fetches NEO data from NASA's API for a single date
 string fetch_neo_data(const string& date, const string& apiKey) {
     CURL* curl;
     CURLcode res;
