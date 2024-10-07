@@ -48,6 +48,6 @@ g++ main.o main_test.o -lgtest -lgtest_main -lpthread -o test_executable
 
 # Run main.cpp
 
-g++ main.cpp src/get_data.cpp -o main.exe -lcurl
+g++ -std=c++11 main.cpp src/get_data.cpp -o app -I/opt/homebrew/opt/sfml/include -L/opt/homebrew/opt/sfml/lib -lsfml-graphics -lsfml-window -lsfml-system -lcurl
 
-g++ -std=c++17 -fdiagnostics-color=always -g main.cpp src/get_data.cpp -o main -lcurl
+./app

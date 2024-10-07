@@ -1,3 +1,5 @@
+#include <SFML/Graphics.hpp>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include "src/get_data.h"
@@ -86,6 +88,8 @@ public:
         cout << "Asteroid " << name << " copied." << endl;
     }
 
+    }
+
     // Asteroid constructor, extracts data from the JSON object
     Asteroid(const json& asteroidData)
         : SpaceBody(
@@ -108,6 +112,9 @@ public:
         closeApproachDate = close_approach["close_approach_date"];
         relativeVelocityKmPerS = stod(close_approach["relative_velocity"]["kilometers_per_second"].get<string>());
         missDistanceKm = stod(close_approach["miss_distance"]["kilometers"].get<string>());
+
+        // Calculate approx mass
+        mass = calculateMass();
     }
 
     void printInfo() const override {

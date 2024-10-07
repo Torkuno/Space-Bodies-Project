@@ -3,6 +3,7 @@
 #include <fstream>
 #include <curl/curl.h>
 #include <cstdlib>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -153,6 +154,32 @@ json process_neo_data(const json& jsonData, const string& selectedDate) {
         cerr << "Error processing data: " << e.what() << endl;
         return {}; // Return an empty JSON object
     }
-    // Default return in case none of the above conditions are met
     return {};
+}
+
+// Fetches NEO data from NASA's API for a single date
+string fetch_neo_data(const string& date, const string& apiKey) {
+    CURL* curl;
+    CURLcode res;
+    string neo_data;
+
+    curl = curl_easy_init();
+    if (curl) {
+        string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
+        string url = baseUrl + "?start_date=" + date + "&end_date=" + date + "&api_key=" + apiKey;
+
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &neo_data);
+
+        res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK) {
+            cerr << "cURL request failed: " << curl_easy_strerror(res) << endl;
+            neo_data = "";  // Return empty string if the request fails
+        }
+
+        curl_easy_cleanup(curl);
+    }
+    return neo_data;
 }
