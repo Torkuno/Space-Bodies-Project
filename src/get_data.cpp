@@ -6,6 +6,7 @@
 
 using namespace std;
 
+// Function to load environment variables from a file
 void loadEnvFile(const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -17,6 +18,7 @@ void loadEnvFile(const string& filename) {
     while (getline(file, line)) {
         // Split line into key=value
         auto delimiterPos = line.find('=');
+        if (delimiterPos == string::npos) continue; // Skip invalid lines
         string key = line.substr(0, delimiterPos);
         string value = line.substr(delimiterPos + 1);
 
@@ -29,14 +31,41 @@ void loadEnvFile(const string& filename) {
     file.close();
 }
 
-// Callback function to capture the response data
+// Callback function to capture the response data from cURL
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* s) {
     size_t totalSize = size * nmemb;
     s->append(static_cast<char*>(contents), totalSize);
     return totalSize;
 }
 
-// Load data from file
+// Function to fetch NEO data from NASA API
+string fetch_neo_data(const string& date, const string& apiKey) {
+    CURL* curl;
+    CURLcode res;
+    string neo_data;
+
+    curl = curl_easy_init();
+    if (curl) {
+        string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
+        string url = baseUrl + "?start_date=" + date + "&end_date=" + date + "&api_key=" + apiKey;
+
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &neo_data);
+
+        res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK) {
+            cerr << "cURL request failed: " << curl_easy_strerror(res) << endl;
+            neo_data = "";  // Return empty string if the request fails
+        }
+
+        curl_easy_cleanup(curl);
+    }
+    return neo_data;
+}
+
+// Function to load data from a local JSON file
 bool load_from_file(json& jsonData, const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -47,6 +76,7 @@ bool load_from_file(json& jsonData, const string& filename) {
     return true;
 }
 
+// Function to output NEO data (for debugging purposes)
 void output_neo_data(const json& neo) {
     try {
         // Extract basic information
@@ -94,7 +124,7 @@ void output_neo_data(const json& neo) {
     }
 }
 
-// Process NEO data for the selected date
+// Function to process NEO data from NASA API or local file
 json process_neo_data(const json& jsonData, const string& selectedDate) {
     try {
         auto& neo_objects = jsonData["near_earth_objects"];
@@ -111,7 +141,6 @@ json process_neo_data(const json& jsonData, const string& selectedDate) {
             cin >> neo_choice;
 
             if (neo_choice > 0 && neo_choice <= neos.size()) {
-                // output_neo_data(neos[neo_choice - 1]); //-> for debugging
                 return neos[neo_choice - 1]; // Return the selected NEO JSON object
             } else {
                 cout << "Invalid choice, please select a valid NEO number." << endl;
@@ -126,31 +155,4 @@ json process_neo_data(const json& jsonData, const string& selectedDate) {
     }
     // Default return in case none of the above conditions are met
     return {};
-}
-
-// Fetch NEO data for a single date
-string fetch_neo_data(const string& date, const string& apiKey) {
-    CURL* curl;
-    CURLcode res;
-    string neo_data;
-
-    curl = curl_easy_init();
-    if (curl) {
-        string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
-        string url = baseUrl + "?start_date=" + date + "&end_date=" + date + "&api_key=" + apiKey;
-
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &neo_data);
-
-        res = curl_easy_perform(curl);
-
-        if (res != CURLE_OK) {
-            cerr << "cURL request failed: " << curl_easy_strerror(res) << endl;
-            neo_data = "";  // Return empty string if the request fails
-        }
-
-        curl_easy_cleanup(curl);
-    }
-    return neo_data;
 }
