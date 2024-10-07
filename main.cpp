@@ -5,37 +5,36 @@
 using namespace std;
 
 
-
 //classes
 class SpaceBody {
 public:
-    SpaceBody(const std::string& name, double diameter) : name(name), diameter(diameter) {}
+    SpaceBody(const string& name, double diameter) : name(name), diameter(diameter) {}
 
     virtual void printInfo() {
-        std::cout << "Name: " << name << ", diameter: " << diameter << std::endl;
+        cout << "Name: " << name << ", diameter: " << diameter << endl;
     }
 
     // Destructor
     virtual ~SpaceBody() {
-        std::cout << "Space body " << name << " destroyed." << std::endl;
+        cout << "Space body " << name << " destroyed." << endl;
     }
 
 protected:
-    std::string name;
+    string name;
     double diameter;
 };
 
 class Planet : public SpaceBody {
 public:
-    Planet(const std::string& name, double diameter, double mass) : SpaceBody(name, diameter), mass(mass) {}
+    Planet(const string& name, double diameter, double mass) : SpaceBody(name, diameter), mass(mass) {}
 
     void printInfo() override {
-        std::cout << "Name: " << name << ", Mass: " << mass << ", diameter: " << diameter << std::endl;
+        cout << "Name: " << name << ", Mass: " << mass << ", diameter: " << diameter << endl;
     }
 
     // Destructor
     ~Planet() {
-        std::cout << "Planet " << name << " destroyed." << std::endl;
+        cout << "Planet " << name << " destroyed." << endl;
     }
 
 private:
@@ -55,10 +54,10 @@ public:
         closeApproachDate(other.closeApproachDate),
         relativeVelocityKmPerS(other.relativeVelocityKmPerS),
         missDistanceKm(other.missDistanceKm), mass(other.mass) {
-        std::cout << "Asteroid " << name << " copied." << std::endl;
+        cout << "Asteroid " << name << " copied." << endl;
         }
     // Asteroid constructor, extracts data from the JSON object
-    Asteroid(const nlohmann::json& asteroidData) : SpaceBody(asteroidData["name"], asteroidData["estimated_diameter"]["kilometers"]["estimated_diameter_min"]),
+    Asteroid(const json& asteroidData) : SpaceBody(asteroidData["name"], asteroidData["estimated_diameter"]["kilometers"]["estimated_diameter_min"]),
           id(asteroidData["id"]),
           nasa_jpl_url(asteroidData["nasa_jpl_url"]),
           absolute_magnitude(asteroidData["absolute_magnitude_h"]),
@@ -72,24 +71,24 @@ public:
         // Extract close approach data
         auto close_approach = asteroidData["close_approach_data"][0];
         closeApproachDate = close_approach["close_approach_date"];
-        relativeVelocityKmPerS = std::stod(close_approach["relative_velocity"]["kilometers_per_second"].get<std::string>());
-        missDistanceKm = std::stod(close_approach["miss_distance"]["kilometers"].get<std::string>());
+        relativeVelocityKmPerS = stod(close_approach["relative_velocity"]["kilometers_per_second"].get<string>());
+        missDistanceKm = stod(close_approach["miss_distance"]["kilometers"].get<string>());
 
         // calculate approx mass
         mass = calculateMass();
     }
 
     void printInfo() override {
-        std::cout << "Asteroid ID: " << id << std::endl;
-        std::cout << "Name: " << name << std::endl;
-        std::cout << "NASA JPL URL: " << nasa_jpl_url << std::endl;
-        std::cout << "Absolute Magnitude (H): " << absolute_magnitude << std::endl;
-        std::cout << "Diameter (Min): " << minDiameterKm << " km, Max: " << maxDiameterKm << " km" << std::endl;
-        std::cout << "Is Potentially Hazardous: " << (isDangerous ? "Yes" : "No") << std::endl;
-        std::cout << "Close Approach Date: " << closeApproachDate << std::endl;
-        std::cout << "Relative Velocity: " << relativeVelocityKmPerS << " km/s" << std::endl;
-        std::cout << "Miss Distance: " << missDistanceKm << " km" << std::endl;
-        std::cout << "Mass: " << mass << " g" << std::endl;
+        cout << "Asteroid ID: " << id << endl;
+        cout << "Name: " << name << endl;
+        cout << "NASA JPL URL: " << nasa_jpl_url << endl;
+        cout << "Absolute Magnitude (H): " << absolute_magnitude << endl;
+        cout << "Diameter (Min): " << minDiameterKm << " km, Max: " << maxDiameterKm << " km" << endl;
+        cout << "Is Potentially Hazardous: " << (isDangerous ? "Yes" : "No") << endl;
+        cout << "Close Approach Date: " << closeApproachDate << endl;
+        cout << "Relative Velocity: " << relativeVelocityKmPerS << " km/s" << endl;
+        cout << "Miss Distance: " << missDistanceKm << " km" << endl;
+        cout << "Mass: " << mass << " g" << endl;
     }
 
     // Operator overload for adding two Asteroids
@@ -119,31 +118,25 @@ public:
 
     // Destructor
     ~Asteroid() {
-        std::cout << "Asteroid " << name << " destroyed." << std::endl;
+        cout << "Asteroid " << name << " destroyed." << endl;
     }
 
 private:
     // New member variables for the asteroid
-    std::string id;
-    std::string nasa_jpl_url;
+    string id;
+    string nasa_jpl_url;
     double absolute_magnitude;
     double minDiameterKm;
     double maxDiameterKm;
     bool isDangerous;
-    std::string closeApproachDate;
-    double relativeVelocityKmPerS; //std::string
-    double missDistanceKm;         //std::string
+    string closeApproachDate;
+    double relativeVelocityKmPerS; //string
+    double missDistanceKm;         //string
     double mass;
     double calculateMass() const {
         return (minDiameterKm + maxDiameterKm) * 1.0; // Placeholder calculation
     }
 };
-
-
-
-
-
-
 
 
 
@@ -156,7 +149,7 @@ int main() {
     cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
     cin >> selectedDate;
 
-    const char* apiKeyEnv = std::getenv("API_KEY");  // Get API key from environment variable
+    const char* apiKeyEnv = getenv("API_KEY");  // Get API key from environment variable
     string apiKey = apiKeyEnv ? apiKeyEnv : "";      // If environment variable is missing, use empty string
 
     if (apiKey.empty()) {
@@ -165,8 +158,8 @@ int main() {
     }
 
     // Declare jsonData and selectedNeoJson outside the if-else blocks
-    nlohmann::json jsonData;  // JSON object to store loaded data
-    nlohmann::json selectedNeoJson; // To hold the selected NEO data
+    json jsonData;  // JSON object to store loaded data
+    json selectedNeoJson; // To hold the selected NEO data
 
     // Fetch NEO data for the selected date and the API key
     string neo_data = fetch_neo_data(selectedDate, apiKey);
@@ -184,14 +177,14 @@ int main() {
 
     } else {
         try {
-            jsonData = nlohmann::json::parse(neo_data);  // Parse the JSON response
+            jsonData = json::parse(neo_data);  // Parse the JSON response
             selectedNeoJson = process_neo_data(jsonData, selectedDate);  // Process the data fetched from API
 
             /*
             //debugging
-            std::cout << "Asteroid JSON Data: " << selectedNeoJson.dump(4) << std::endl;
+            cout << "Asteroid JSON Data: " << selectedNeoJson.dump(4) << endl;
             if (!selectedNeoJson["estimated_diameter"]["kilometers"]["estimated_diameter_min"].is_number()) {
-                std::cerr << "Error: estimated_diameter_min is not a number." << std::endl;
+                cerr << "Error: estimated_diameter_min is not a number." << endl;
             }
             */
 
@@ -205,7 +198,7 @@ int main() {
             cout << "\nEnter a date (YYYY-MM-DD) to search for NEOs: ";
             cin >> selectedDate2;
             string neo_data2 = fetch_neo_data(selectedDate2, apiKey);
-            jsonData = nlohmann::json::parse(neo_data2);
+            jsonData = json::parse(neo_data2);
             selectedNeoJson = process_neo_data(jsonData, selectedDate2);
             Asteroid asteroid2(selectedNeoJson);
             cout << "\n\n--------------" << endl;

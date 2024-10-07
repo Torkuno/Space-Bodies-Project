@@ -6,19 +6,19 @@
 
 using namespace std;
 
-void loadEnvFile(const std::string& filename) {
-    std::ifstream file(filename);
+void loadEnvFile(const string& filename) {
+    ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "Could not open .env file" << std::endl;
+        cerr << "Could not open .env file" << endl;
         return;
     }
 
-    std::string line;
-    while (std::getline(file, line)) {
+    string line;
+    while (getline(file, line)) {
         // Split line into key=value
         auto delimiterPos = line.find('=');
-        std::string key = line.substr(0, delimiterPos);
-        std::string value = line.substr(delimiterPos + 1);
+        string key = line.substr(0, delimiterPos);
+        string value = line.substr(delimiterPos + 1);
 
 #ifdef _WIN32
         _putenv_s(key.c_str(), value.c_str());  // For Windows
@@ -95,7 +95,7 @@ void output_neo_data(const json& neo) {
 }
 
 // Process NEO data for the selected date
-nlohmann::json process_neo_data(const json& jsonData, const string& selectedDate) {
+json process_neo_data(const json& jsonData, const string& selectedDate) {
     try {
         auto& neo_objects = jsonData["near_earth_objects"];
         if (neo_objects.contains(selectedDate)) {

@@ -9,7 +9,7 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
-                "-std=c++11",
+                "src/get_data.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-lcurl"
