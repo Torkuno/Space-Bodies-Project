@@ -134,8 +134,14 @@ private:
     double missDistanceKm;         //string
     double mass;
     double calculateMass() const {
-        return (minDiameterKm + maxDiameterKm) * 1.0; // Placeholder calculation
-    }
+    // Assume density of asteroid (in g/cm^3) and convert km to cm (1 km = 1e5 cm)
+    const double density = 3.0; // Example density in g/cm^3
+    double radiusMin = (minDiameterKm * 1e5) / 2.0;
+    double radiusMax = (maxDiameterKm * 1e5) / 2.0;
+    double volumeMin = (4.0 / 3.0) * M_PI * pow(radiusMin, 3);
+    double volumeMax = (4.0 / 3.0) * M_PI * pow(radiusMax, 3);
+    double avgVolume = (volumeMin + volumeMax) / 2.0;
+    return density * avgVolume; // Approximate mass in grams
 };
 
 
