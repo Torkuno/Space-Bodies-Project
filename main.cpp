@@ -27,6 +27,18 @@ public:
         return (G * mass) / (radius_m * radius_m);  // Surface gravity in m/s^2
     }
 
+    // Calculate escape velocity
+    double calculateEscapeVelocity() const {
+        const double G = 6.67430e-11;  // Gravitational constant (m^3 kg^-1 s^-2)
+        double radiusMeters = (diameter * 1000) / 2.0;  // Convert km to meters and get radius
+        double escapeVelocity_m_s = sqrt((2 * G * mass) / radiusMeters);  // Escape velocity in m/s
+        return escapeVelocity_m_s / 1000.0;  // Convert to km/s
+    }
+
+    // Getter for mass and diameter
+    double getMass() const { return mass; }
+    double getDiameter() const { return diameter; }
+
     // Destructor
     virtual ~SpaceBody() {
         cout << "Space body " << name << " destroyed." << endl;
@@ -48,14 +60,6 @@ public:
         cout << "Planet Name: " << name << ", Mass: " << mass << " kg, Diameter: " << diameter << " km" << endl;
         cout << "Surface Gravity: " << calculateSurfaceGravity() << " m/s^2" << endl;
         cout << "Escape Velocity: " << calculateEscapeVelocity() << " km/s" << endl;
-    }
-
-    // Calculate escape velocity in km/s
-    double calculateEscapeVelocity() const {
-        const double G = 6.67430e-11;  // Gravitational constant (m^3 kg^-1 s^-2)
-        double radiusMeters = (diameter * 1000) / 2.0;  // Convert km to meters and get radius
-        double escapeVelocity_m_s = sqrt((2 * G * mass) / radiusMeters);  // Escape velocity in m/s
-        return escapeVelocity_m_s / 1000.0;  // Convert to km/s
     }
 
     // Destructor
@@ -195,29 +199,98 @@ private:
     }
 };
 
+void handlePlanetOptions(Asteroid& asteroid) {
+    bool planetMenu = true;
+    while (planetMenu) {
+        std::cout << "\nPlease select an option:\n";
+        std::cout << "1. Display information on a planet.\n";
+        std::cout << "2. Combine asteroid with a planet.\n";
+        std::cout << "3. Exit planet analysis.\n";
+        std::cout << "Enter your choice: ";
+
+        int planetChoice;
+        std::cin >> planetChoice;
+
+        switch (planetChoice) {
+            case 1: {
+                // Display a dropdown of planets
+                for (size_t i = 0; i < predefinedPlanets.size(); ++i) {
+                    std::cout << i + 1 << ". " << predefinedPlanets[i].name << std::endl;
+                }
+                std::cout << "\nSelect a planet to display information:\n";
+                int planetSelection;
+                std::cin >> planetSelection;
+
+                if (planetSelection > 0 && planetSelection <= predefinedPlanets.size()) {
+                    // Use the Planet class to display planet information
+                    const auto& planetData = predefinedPlanets[planetSelection - 1];
+                    Planet planet(planetData.name, planetData.diameter, planetData.mass);
+                    planet.printInfo();
+                } else {
+                    std::cout << "Invalid selection.\n";
+                }
+                break;
+            }
+            case 2: {
+                // Combine asteroid with a planet
+                std::cout << "\nSelect a planet to combine with the asteroid:\n";
+                for (size_t i = 0; i < predefinedPlanets.size(); ++i) {
+                    std::cout << i + 1 << ". " << predefinedPlanets[i].name << std::endl;
+                }
+                int planetSelection;
+                std::cin >> planetSelection;
+
+                if (planetSelection > 0 && planetSelection <= predefinedPlanets.size()) {
+                    const auto& planetData = predefinedPlanets[planetSelection - 1];
+                    Planet planet(planetData.name, planetData.diameter, planetData.mass);
+                    std::cout << "\nPlanet Name: " << planetData.name << "\n";
+
+                    // Calculate asteroid impact energy and compare with the planet's mass and escape velocity
+                    double asteroidImpactEnergy = asteroid.calculateImpactEnergy();
+                    double planetEscapeVelocity = planet.calculateEscapeVelocity();
+
+                    if (asteroidImpactEnergy > 0.01 && asteroid.getMass() > (planet.getMass() * 0.00001)) {
+                        std::cout << "\nWarning: The asteroid could cause significant damage to " << planetData.name << "!\n";
+                    } else {
+                        std::cout << "\nThe asteroid will likely not cause significant damage to " << planetData.name << ".\n";
+                    }
+                } else {
+                    std::cout << "Invalid selection.\n";
+                }
+                break;
+            }
+            case 3:
+                planetMenu = false;
+                break;
+            default:
+                std::cout << "Invalid choice. Please select a valid option.\n";
+        }
+    }
+}
+
+
 int main() {
     loadEnvFile(".env");
 
     bool continueAnalyzing = true;
     while (continueAnalyzing) {
-        // Ask the user for a single date
         string selectedDate;
         cout << "\n\nWelcome to the NEO Analyzer!" << endl;
         cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
         cin >> selectedDate;
 
-        const char* apiKeyEnv = getenv("API_KEY");  // Get API key from environment variable
-        string apiKey = apiKeyEnv ? apiKeyEnv : "";  // If environment variable is missing, use empty string
+        const char* apiKeyEnv = getenv("API_KEY"); // Get API key environment variable
+        string apiKey = apiKeyEnv ? apiKeyEnv : "";  // If missing, use an empty string
 
         if (apiKey.empty()) {
             cerr << "API key is missing. Please set the API_KEY environment variable." << endl;
-            return 1;  // Exit program if API key is not set
+            return 1;  // Exit the program if API key is not set
         }
 
-        // Declare jsonData and selectedNeoJson outside the if-else blocks
-        json jsonData;        // JSON object to store loaded data
-        json selectedNeoJson; // To hold the selected NEO data
-
+        // Declare jsonData and selected NEOJson outside the if-else blocks
+        json jsonData;          // JSON object to store loaded data
+        json selectedNeoJson;   // To hold the selected NEO data
+        
         // Fetch NEO data for the selected date and the API key
         string neo_data = fetch_neo_data(selectedDate, apiKey);
 
@@ -227,30 +300,26 @@ int main() {
             // If fetching from API fails, load from file
             if (!load_from_file(jsonData, "data.json")) {
                 cerr << "Failed to load data from file." << endl;
-                return 1;  // Exit if both API and file loading fail
+                return 1; // Exit if both API and file loading fail
             }
 
-            selectedNeoJson = process_neo_data(jsonData, selectedDate);  // Process data from file
-
+            selectedNeoJson = process_neo_data(jsonData, selectedDate); // process data from file
         } else {
             try {
-                jsonData = json::parse(neo_data);  // Parse the JSON response
-                selectedNeoJson = process_neo_data(jsonData, selectedDate);  // Process the data fetched from API
+                jsonData = json::parse(neo_data);
+                selectedNeoJson = process_neo_data(jsonData, selectedDate); // process the data fetched from Api
             } catch (const exception& e) {
                 cerr << "Error parsing data: " << e.what() << endl;
                 return 1;
             }
         }
 
-        // Check if a valid NEO was selected
         if (!selectedNeoJson.empty()) {
             try {
-                // Create asteroid class object
                 Asteroid asteroid1(selectedNeoJson);
 
                 bool asteroidMenu = true;
                 while (asteroidMenu) {
-                    // Display action menu
                     cout << "\nPlease select an option:\n";
                     cout << "1. Print all information about the asteroid.\n";
                     cout << "2. Calculate and display the surface gravity.\n";
@@ -291,7 +360,6 @@ int main() {
                                     cout << "\n--- Second Asteroid Information ---\n";
                                     asteroid2.printInfo();
 
-                                    // Combine the two asteroids
                                     cout << "\nCombining the two asteroids...\n";
                                     Asteroid combinedAsteroid = asteroid1 + asteroid2;
                                     cout << "\n--- Combined Asteroid Information ---\n";
@@ -305,22 +373,16 @@ int main() {
                             break;
                         }
                         case 5:
-                            cout << "\n--- Predefined Planets Information ---\n";
-                            for (const auto& pdata : predefinedPlanets) {
-                                Planet planet(pdata.name, pdata.diameter, pdata.mass);
-                                planet.printInfo();
-                                cout << "------------------------------\n";
-                            }
+                            handlePlanetOptions(asteroid1);  // Move to planet analysis
                             break;
                         case 6:
-                            asteroidMenu = false;  // Exit the asteroid menu
+                            asteroidMenu = false;
                             break;
                         default:
                             cout << "Invalid choice. Please select a valid option.\n";
                     }
 
                     if (asteroidMenu) {
-                        // Ask if the user wants to continue with the current asteroid
                         cout << "\nDo you want to perform another action on this asteroid? (y/n): ";
                         char continueChoice;
                         cin >> continueChoice;
@@ -337,7 +399,6 @@ int main() {
             cout << "No asteroid selected.\n";
         }
 
-        // Ask if the user wants to analyze another asteroid
         cout << "\nDo you want to analyze another asteroid? (y/n): ";
         char mainChoice;
         cin >> mainChoice;
