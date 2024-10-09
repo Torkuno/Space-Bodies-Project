@@ -204,7 +204,7 @@ void handlePlanetOptions(Asteroid& asteroid) {
     while (planetMenu) {
         std::cout << "\nPlease select an option:\n";
         std::cout << "1. Display information on a planet.\n";
-        std::cout << "2. Estimate impact risk\n";
+        std::cout << "2. Estimate risk of damage if Asteroid Collides.\n";
         std::cout << "3. Exit planet analysis.\n";
         std::cout << "Enter your choice: ";
 
