@@ -25,4 +25,4 @@ const vector<PlanetData> predefinedPlanets = {
     {"Neptune", 49244, 1.02413e26},
 };
 
-#endif // PLANETS_H
+#endif 
