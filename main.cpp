@@ -13,7 +13,7 @@ using namespace std;
 // Base class for Space Bodies (e.g., Planets, Asteroids)
 class SpaceBody {
 public:
-    SpaceBody(const string& name, double diameter, double mass) 
+    SpaceBody(const string& name, double diameter, double mass)
         : name(name), diameter(diameter), mass(mass) {}
 
     virtual void printInfo() const {
@@ -41,7 +41,7 @@ public:
 
     // Destructor
     virtual ~SpaceBody() {
-        cout << "Space body " << name << " destroyed." << endl;
+        cout << "Space body " << name << " memory freed." << endl;
     }
 
 protected:
@@ -53,7 +53,7 @@ protected:
 // Derived class for Planets
 class Planet : public SpaceBody {
 public:
-    Planet(const string& name, double diameter, double mass) 
+    Planet(const string& name, double diameter, double mass)
         : SpaceBody(name, diameter, mass) {}
 
     void printInfo() const override {
@@ -64,7 +64,7 @@ public:
 
     // Destructor
     ~Planet() {
-        cout << "Planet " << name << " destroyed." << endl;
+        cout << "Planet " << name << " memory freed." << endl;
     }
 };
 
@@ -72,7 +72,7 @@ public:
 class Asteroid : public SpaceBody {
 public:
     // Copy constructor
-    Asteroid(const Asteroid& other) 
+    Asteroid(const Asteroid& other)
         : SpaceBody(other.name, other.diameter, other.mass),
           id(other.id),
           nasa_jpl_url(other.nasa_jpl_url),
@@ -87,10 +87,10 @@ public:
     }
 
     // Asteroid constructor, extracts data from the JSON object
-    Asteroid(const json& asteroidData) 
+    Asteroid(const json& asteroidData)
         : SpaceBody(
-            asteroidData["name"], 
-            asteroidData["estimated_diameter"]["kilometers"]["estimated_diameter_min"].get<double>(), 
+            asteroidData["name"],
+            asteroidData["estimated_diameter"]["kilometers"]["estimated_diameter_min"].get<double>(),
             calculateMass(asteroidData)
           ),
           id(asteroidData["id"]),
@@ -162,7 +162,7 @@ public:
 
     // Destructor
     ~Asteroid() {
-        cout << "Asteroid " << name << " destroyed." << endl;
+        cout << "Asteroid " << name << " memory freed." << endl;
     }
 
 private:
@@ -204,7 +204,7 @@ void handlePlanetOptions(Asteroid& asteroid) {
     while (planetMenu) {
         std::cout << "\nPlease select an option:\n";
         std::cout << "1. Display information on a planet.\n";
-        std::cout << "2. Combine asteroid with a planet.\n";
+        std::cout << "2. Estimate impact risk\n";
         std::cout << "3. Exit planet analysis.\n";
         std::cout << "Enter your choice: ";
 
@@ -290,7 +290,7 @@ int main() {
         // Declare jsonData and selected NEOJson outside the if-else blocks
         json jsonData;          // JSON object to store loaded data
         json selectedNeoJson;   // To hold the selected NEO data
-        
+
         // Fetch NEO data for the selected date and the API key
         string neo_data = fetch_neo_data(selectedDate, apiKey);
 
