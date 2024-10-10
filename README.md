@@ -31,23 +31,23 @@
 ---
 
 
-# Run gtest:
-
-```
-g++ main.cpp -c
-
-g++ main_test.cpp -c
-
-g++ main.o main_test.o -lgtest -lgtest_main -lpthread -o test_executable
-
-
-./test_executable
-```
-
-
 
 # Run main.cpp
 
-g++ main.cpp src/get_data.cpp -o main.exe -lcurl
+Windows:
 
-g++ -std=c++17 -fdiagnostics-color=always -g main.cpp src/get_data.cpp -o main -lcurl
+- `g++ main.cpp src/get_data.cpp src/classes.cpp -o main.exe -lcurl`
+
+Mac:
+
+- `g++ -std=c++17 -fdiagnostics-color=always -g main.cpp src/get_data.cpp src/classes.cpp -o main -lcurl`
+
+`./main.exe`
+
+# Run gtest:
+
+```
+g++ test_spacebody.cpp src/get_data.cpp src/classes.cpp -o test_spacebody -lgtest -lgtest_main -pthread -lcurl
+
+./test_spacebody
+```

@@ -1,5 +1,5 @@
 *.o
-*.exe
+#*.exe
 .env
 main.dSYM
 main
