@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 #include "src/get_data.h"
 #include "src/planets.h"  // Include the planets header
 #include <vector>
@@ -13,6 +14,17 @@ using namespace std;
 // ** Class Definitions **
 
 // Base class for Space Bodies (e.g., Planets, Asteroids)
+#include "json.hpp"
+
+// Constants for scaling and positioning
+const double EARTH_RADIUS = 6371.0;  // Earth radius in kilometers
+const double SCALE_FACTOR = 0.00001;  // Reduced scaling factor for visualization
+const float WINDOW_CENTER_X = 400;
+const float WINDOW_CENTER_Y = 400;
+float timeElapsed = 0.0f;  // Time-scrolling variable
+bool draggingSlider = false;  // Slider drag state
+
+// SpaceBody Class
 class SpaceBody {
 public:
     SpaceBody(const string& name, double diameter, double mass)
@@ -113,7 +125,9 @@ public:
         relativeVelocityKmPerS = stod(close_approach["relative_velocity"]["kilometers_per_second"].get<string>());
         missDistanceKm = stod(close_approach["miss_distance"]["kilometers"].get<string>());
 
-        // Calculate approx mass
+        // Adjusted miss distance for visualization
+        missDistanceKm = std::max(missDistanceKm / 2.0, EARTH_RADIUS * 2);  // Ensure it starts outside Earth's radius
+
         mass = calculateMass();
     }
 
