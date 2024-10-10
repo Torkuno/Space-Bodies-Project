@@ -2,235 +2,268 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 #include "src/get_data.h"
+#include "json.hpp"
 
-using namespace std;
+// Constants for scaling and positioning
+const double EARTH_RADIUS = 6371.0;  // Earth radius in kilometers
+const double SCALE_FACTOR = 0.00001;  // Reduced scaling factor for visualization
+const float WINDOW_CENTER_X = 400;
+const float WINDOW_CENTER_Y = 400;
+float timeElapsed = 0.0f;  // Time-scrolling variable
+bool draggingSlider = false;  // Slider drag state
 
-// Classes
+// SpaceBody Class
 class SpaceBody {
 public:
-    SpaceBody(const string& name, double diameter) : name(name), diameter(diameter) {}
+    SpaceBody(const std::string& name, double diameter) : name(name), diameter(diameter) {}
 
     virtual void printInfo() {
-        cout << "Name: " << name << ", diameter: " << diameter << endl;
+        std::cout << "Name: " << name << ", diameter: " << diameter << std::endl;
     }
 
-    // Destructor
     virtual ~SpaceBody() {
-        cout << "Space body " << name << " destroyed." << endl;
+        std::cout << "Space body " << name << " destroyed." << std::endl;
     }
 
 protected:
-    string name;
+    std::string name;
     double diameter;
 };
 
-class Planet : public SpaceBody {
-public:
-    Planet(const string& name, double diameter, double mass) : SpaceBody(name, diameter), mass(mass) {}
-
-    void printInfo() override {
-        cout << "Name: " << name << ", Mass: " << mass << ", diameter: " << diameter << endl;
-    }
-
-    // Destructor
-    ~Planet() {
-        cout << "Planet " << name << " destroyed." << endl;
-    }
-
-private:
-    double mass;
-};
-
+// Asteroid Class Inheriting from SpaceBody
 class Asteroid : public SpaceBody {
 public:
-    // Copy constructor
-    Asteroid(const Asteroid& other) : SpaceBody(other.name, other.diameter),
-        id(other.id),
-        nasa_jpl_url(other.nasa_jpl_url),
-        absolute_magnitude(other.absolute_magnitude),
-        minDiameterKm(other.minDiameterKm),
-        maxDiameterKm(other.maxDiameterKm),
-        isDangerous(other.isDangerous),
-        closeApproachDate(other.closeApproachDate),
-        relativeVelocityKmPerS(other.relativeVelocityKmPerS),
-        missDistanceKm(other.missDistanceKm), mass(other.mass) {
-        cout << "Asteroid " << name << " copied." << endl;
-    }
-
-    // Asteroid constructor, extracts data from the JSON object
-    Asteroid(const json& asteroidData) : SpaceBody(asteroidData["name"], asteroidData["estimated_diameter"]["kilometers"]["estimated_diameter_min"]),
+    Asteroid(const nlohmann::json& asteroidData) : SpaceBody(asteroidData["name"], asteroidData["estimated_diameter"]["kilometers"]["estimated_diameter_min"]),
         id(asteroidData["id"]),
         nasa_jpl_url(asteroidData["nasa_jpl_url"]),
         absolute_magnitude(asteroidData["absolute_magnitude_h"]),
         isDangerous(asteroidData["is_potentially_hazardous_asteroid"]) {
-        // Extract diameter information
+
         auto diameter = asteroidData["estimated_diameter"];
         minDiameterKm = diameter["kilometers"]["estimated_diameter_min"];
         maxDiameterKm = diameter["kilometers"]["estimated_diameter_max"];
 
-        // Extract close approach data
         auto close_approach = asteroidData["close_approach_data"][0];
         closeApproachDate = close_approach["close_approach_date"];
-        relativeVelocityKmPerS = stod(close_approach["relative_velocity"]["kilometers_per_second"].get<string>());
-        missDistanceKm = stod(close_approach["miss_distance"]["kilometers"].get<string>());
+        relativeVelocityKmPerS = std::stod(close_approach["relative_velocity"]["kilometers_per_second"].get<std::string>());
+        missDistanceKm = std::stod(close_approach["miss_distance"]["kilometers"].get<std::string>());
 
-        // Calculate approx mass
+        // Adjusted miss distance for visualization
+        missDistanceKm = std::max(missDistanceKm / 2.0, EARTH_RADIUS * 2);  // Ensure it starts outside Earth's radius
+
         mass = calculateMass();
     }
 
-    // Print asteroid info
     void printInfo() override {
-        cout << "Asteroid ID: " << id << endl;
-        cout << "Name: " << name << endl;
-        cout << "NASA JPL URL: " << nasa_jpl_url << endl;
-        cout << "Absolute Magnitude (H): " << absolute_magnitude << endl;
-        cout << "Diameter (Min): " << minDiameterKm << " km, Max: " << maxDiameterKm << " km" << endl;
-        cout << "Is Potentially Hazardous: " << (isDangerous ? "Yes" : "No") << endl;
-        cout << "Close Approach Date: " << closeApproachDate << endl;
-        cout << "Relative Velocity: " << relativeVelocityKmPerS << " km/s" << endl;
-        cout << "Miss Distance: " << missDistanceKm << " km" << endl;
-        cout << "Mass: " << mass << " g" << endl;
+        std::cout << "Asteroid ID: " << id << std::endl;
+        std::cout << "Name: " << name << std::endl;
+        std::cout << "NASA JPL URL: " << nasa_jpl_url << std::endl;
+        std::cout << "Absolute Magnitude (H): " << absolute_magnitude << std::endl;
+        std::cout << "Diameter (Min): " << minDiameterKm << " km, Max: " << maxDiameterKm << " km" << std::endl;
+        std::cout << "Is Potentially Hazardous: " << (isDangerous ? "Yes" : "No") << std::endl;
+        std::cout << "Close Approach Date: " << closeApproachDate << std::endl;
+        std::cout << "Relative Velocity: " << relativeVelocityKmPerS << " km/s" << std::endl;
+        std::cout << "Miss Distance: " << missDistanceKm << " km" << std::endl;
+        std::cout << "Mass: " << mass << " g" << std::endl;
     }
-
-    // Operator overload for adding two Asteroids
-    Asteroid operator+(const Asteroid& other) const {
-        // Create a copy of the current asteroid
-        Asteroid combinedAsteroid(*this);
-
-        // Modify necessary fields
-        combinedAsteroid.name = name + " & " + other.name; // Combine names
-        combinedAsteroid.minDiameterKm = minDiameterKm + other.minDiameterKm; // Combine diameters
-        combinedAsteroid.maxDiameterKm = maxDiameterKm + other.maxDiameterKm;
-        combinedAsteroid.mass = mass + other.mass; // Combine masses
-        combinedAsteroid.relativeVelocityKmPerS = relativeVelocityKmPerS + other.relativeVelocityKmPerS; // Combine relative velocities
-        combinedAsteroid.missDistanceKm = missDistanceKm + other.missDistanceKm; // Combine miss distances
-        combinedAsteroid.isDangerous = ((combinedAsteroid.minDiameterKm > 280) || (combinedAsteroid.relativeVelocityKmPerS > 5.0)); // Update the potentially hazardous status
-
-        // Return the combined asteroid
-        return combinedAsteroid;
-    }
-
-    // Destructor
-    ~Asteroid() {
-        cout << "Asteroid " << name << " destroyed." << endl;
-    }
-
-private:
-    string id;
-    string nasa_jpl_url;
-    double absolute_magnitude;
-    double minDiameterKm;
-    double maxDiameterKm;
-    bool isDangerous;
-    string closeApproachDate;
-    double relativeVelocityKmPerS;
-    double missDistanceKm;
-    double mass;
 
     double calculateMass() const {
         const double density = 3.0; // Example density in g/cm^3
         double radiusMin = (minDiameterKm * 1e5) / 2.0;
         double radiusMax = (maxDiameterKm * 1e5) / 2.0;
-        double volumeMin = (4.0 / 3.0) * M_PI * pow(radiusMin, 3);
-        double volumeMax = (4.0 / 3.0) * M_PI * pow(radiusMax, 3);
+        double volumeMin = (4.0 / 3.0) * M_PI * std::pow(radiusMin, 3);
+        double volumeMax = (4.0 / 3.0) * M_PI * std::pow(radiusMax, 3);
         double avgVolume = (volumeMin + volumeMax) / 2.0;
-        return density * avgVolume; // Approximate mass in grams
+        return density * avgVolume;
     }
-};  // Add the closing brace and semicolon to terminate the class definition.
 
-// SFML Hyperbolic Orbit Visualization Functions
-const double EARTH_RADIUS = 6371.0;  // Earth radius in kilometers
-const double SCALE_FACTOR = 0.01;    // Scaling factor for visualization
+    double getMissDistanceKm() const {
+        return missDistanceKm;
+    }
 
+private:
+    std::string id;
+    std::string nasa_jpl_url;
+    double absolute_magnitude;
+    double minDiameterKm;
+    double maxDiameterKm;
+    bool isDangerous;
+    std::string closeApproachDate;
+    double relativeVelocityKmPerS;
+    double missDistanceKm;
+    double mass;
+};
+
+// Convert degrees to radians
 double degToRad(double degrees) {
     return degrees * M_PI / 180.0;
 }
 
+// Function to calculate asteroid position based on semi-major axis and true anomaly
 sf::Vector2f calculatePosition(double semiMajorAxis, double eccentricity, double trueAnomaly, double scaleFactor) {
-    double r = (semiMajorAxis * (1 - eccentricity * eccentricity)) / (1 + eccentricity * cos(trueAnomaly));
-    double x = r * cos(trueAnomaly);  // X position
-    double y = r * sin(trueAnomaly);  // Y position
+    double r = (semiMajorAxis * (1 - eccentricity * eccentricity)) / (1 + eccentricity * std::cos(trueAnomaly));
+    double x = r * std::cos(trueAnomaly);  // X position
+    double y = r * std::sin(trueAnomaly);  // Y position
+
     return sf::Vector2f(x * scaleFactor, y * scaleFactor);
+}
+
+// Function to handle slider movement
+void handleSlider(sf::RectangleShape& sliderBar, sf::CircleShape& slider, sf::RenderWindow& window, float& timeElapsed) {
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && draggingSlider) {
+        // Limit the slider's movement within the slider bar
+        float newPosX = static_cast<float>(mousePos.x);
+        if (newPosX < sliderBar.getPosition().x)
+            newPosX = sliderBar.getPosition().x;
+        if (newPosX > sliderBar.getPosition().x + sliderBar.getSize().x)
+            newPosX = sliderBar.getPosition().x + sliderBar.getSize().x;
+
+        slider.setPosition(newPosX, slider.getPosition().y);
+        // Update timeElapsed based on slider position
+        timeElapsed = (newPosX - sliderBar.getPosition().x) / sliderBar.getSize().x * 360.0f;  // Scale to [0, 360] degrees for orbit
+    }
 }
 
 int main() {
     loadEnvFile(".env");
 
-    // Ask the user for a single date
-    string selectedDate;
-    cout << "\n\nWelcome to the NEO Analyzer!" << endl;
-    cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
-    cin >> selectedDate;
+    // Ask for the date to search NEOs
+    std::string selectedDate;
+    std::cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
+    std::cin >> selectedDate;
 
     const char* apiKeyEnv = getenv("API_KEY");  // Get API key from environment variable
-    string apiKey = apiKeyEnv ? apiKeyEnv : "";      // If environment variable is missing, use empty string
+    std::string apiKey = apiKeyEnv ? apiKeyEnv : "";  // If environment variable is missing, use an empty string
 
     if (apiKey.empty()) {
-        cerr << "API key is missing. Please set the API_KEY environment variable." << endl;
-        return 1;  // Exit program if API key is not set
+        std::cerr << "API key is missing. Please set the API_KEY environment variable." << std::endl;
+        return 1;  // Exit if the API key is not set
     }
 
-    json jsonData;
-    json selectedNeoJson;
-
-    // Fetch NEO data for the selected date and the API key
-    string neo_data = fetch_neo_data(selectedDate, apiKey);
+    nlohmann::json jsonData, selectedNeoJson;
+    std::string neo_data = fetch_neo_data(selectedDate, apiKey);  // Fetch NEO data from the API
 
     if (neo_data.empty()) {
-        cerr << "Failed to fetch data from NASA API." << endl;
+        std::cerr << "Failed to fetch data from NASA API." << std::endl;
         return 1;
     }
 
     try {
-        jsonData = json::parse(neo_data);  // Parse the JSON response
+        jsonData = nlohmann::json::parse(neo_data);  // Parse the JSON response
+        auto& neos = jsonData["near_earth_objects"][selectedDate];
+        std::cout << "There are " << neos.size() << " NEOs for the date " << selectedDate << ".\n";
 
-        // Select the first asteroid for simplicity
-        selectedNeoJson = jsonData["near_earth_objects"][selectedDate][0];
-        cout << "Selected NEO: " << selectedNeoJson["name"] << endl;
+        for (size_t i = 0; i < neos.size(); ++i) {
+            std::cout << i + 1 << ". " << neos[i]["name"] << std::endl;
+        }
 
-        // Extract relevant data for visualization
-        double missDistance = stod(selectedNeoJson["close_approach_data"][0]["miss_distance"]["kilometers"].get<string>());
-        double relativeVelocity = stod(selectedNeoJson["close_approach_data"][0]["relative_velocity"]["kilometers_per_second"].get<string>());
+        int choice;
+        std::cout << "\nSelect a NEO by number: ";
+        std::cin >> choice;
 
-        // Visualization parameters for hyperbolic orbit
-        double semiMajorAxis = -missDistance;   // Negative for hyperbolic orbits
-        double eccentricity = 1.5;              // Arbitrary eccentricity for visualization
-        double trueAnomaly = degToRad(-90.0);   // Start at -90 degrees
-        double thetaStep = 0.001;               // Angular step for true anomaly
+        if (choice < 1 || choice > neos.size()) {
+            std::cerr << "Invalid selection." << std::endl;
+            return 1;
+        }
 
-        // SFML window setup
-        sf::RenderWindow window(sf::VideoMode(800, 800), "Asteroid Trajectory - Hyperbolic Orbit");
-        sf::CircleShape earth(EARTH_RADIUS * SCALE_FACTOR);  // Earth represented as a circle
-        earth.setFillColor(sf::Color::Blue);
-        earth.setPosition(400 - EARTH_RADIUS * SCALE_FACTOR, 400 - EARTH_RADIUS * SCALE_FACTOR); // Center Earth
+        selectedNeoJson = neos[choice - 1];
 
-        sf::CircleShape asteroid(5.f);  // Asteroid represented as a small circle
-        asteroid.setFillColor(sf::Color::White);
+        Asteroid asteroid(selectedNeoJson);
+        asteroid.printInfo();
+
+        // Visualization parameters for elliptical orbit
+        double semiMajorAxis = asteroid.getMissDistanceKm();  // Positive semi-major axis for elliptical orbit
+        double eccentricity = 0.5;  // Eccentricity for a smoother elliptical orbit
+        double trueAnomaly = degToRad(-90.0);  // Start at -90 degrees
+
+        // Vector to store the asteroid's path for drawing the orbit
+        std::vector<sf::Vector2f> orbitPath;
+
+        // Setup SFML window
+        sf::RenderWindow window(sf::VideoMode(800, 800), "Asteroid Elliptical Orbit Visualization");
+
+        // Load Earth texture
+        sf::Texture earthTexture;
+        if (!earthTexture.loadFromFile("Earth_Image.jpeg")) {
+            std::cerr << "Failed to load Earth image." << std::endl;
+            return 1;
+        }
+
+        sf::CircleShape earth(100.f);  // Earth with realistic size
+        earth.setTexture(&earthTexture);  // Set Earth image as texture
+        earth.setPosition(WINDOW_CENTER_X - 100.f, WINDOW_CENTER_Y - 100.f); // Center Earth
+
+        // Asteroid size increased for visibility
+        sf::CircleShape asteroidShape(10.f);
+        asteroidShape.setFillColor(sf::Color::White);
+
+        // Create a slider bar
+        sf::RectangleShape sliderBar(sf::Vector2f(200, 5));
+        sliderBar.setFillColor(sf::Color::White);
+        sliderBar.setPosition(300, 750);
+
+        // Create a slider (circle) for time control
+        sf::CircleShape slider(10.f);
+        slider.setFillColor(sf::Color::Red);
+        slider.setPosition(sliderBar.getPosition().x, sliderBar.getPosition().y - 5);  // Position on top of the slider bar
 
         while (window.isOpen()) {
             sf::Event event;
             while (window.pollEvent(event)) {
                 if (event.type == sf::Event::Closed)
                     window.close();
+
+                // Start dragging the slider if the user clicks on it
+                if (event.type == sf::Event::MouseButtonPressed) {
+                    if (slider.getGlobalBounds().contains(window.mapPixelToCoords(sf::Mouse::getPosition(window)))) {
+                        draggingSlider = true;
+                    }
+                }
+
+                // Stop dragging when the mouse is released
+                if (event.type == sf::Event::MouseButtonReleased) {
+                    draggingSlider = false;
+                }
             }
 
-            // Update true anomaly over time
-            trueAnomaly += thetaStep;
+            // Handle slider movement and update timeElapsed
+            handleSlider(sliderBar, slider, window, timeElapsed);
 
-            // Calculate asteroid's position
+            // Calculate the true anomaly based on the slider's value (mapped to 0-360 degrees)
+            trueAnomaly = degToRad(timeElapsed);
+            std::cout << "True Anomaly: " << trueAnomaly << std::endl;
+
+            // Calculate asteroid position and store it in orbit path
             sf::Vector2f position = calculatePosition(semiMajorAxis, eccentricity, trueAnomaly, SCALE_FACTOR);
-            asteroid.setPosition(400 + position.x, 400 - position.y);  // Offset to center around Earth
+            std::cout << "Asteroid Position: (" << position.x << ", " << position.y << ")" << std::endl;
+            asteroidShape.setPosition(WINDOW_CENTER_X + position.x, WINDOW_CENTER_Y - position.y);
 
-            // Clear and draw
+            // Store position dynamically as the asteroid moves
+            orbitPath.push_back(asteroidShape.getPosition());
+
             window.clear();
             window.draw(earth);
-            window.draw(asteroid);
+            window.draw(asteroidShape);
+
+            // Draw the orbit path as a series of connected lines
+            sf::VertexArray orbitLines(sf::LineStrip, orbitPath.size());
+            for (size_t i = 0; i < orbitPath.size(); ++i) {
+                orbitLines[i].position = orbitPath[i];
+                orbitLines[i].color = sf::Color::White;
+            }
+            window.draw(orbitLines);
+
+            // Draw the slider bar and slider (time control)
+            window.draw(sliderBar);
+            window.draw(slider);
+
             window.display();
         }
-
     } catch (const std::exception& e) {
-        cerr << "Error parsing data: " << e.what() << endl;
+        std::cerr << "Error parsing data: " << e.what() << std::endl;
         return 1;
     }
 
