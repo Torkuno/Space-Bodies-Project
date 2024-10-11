@@ -68,15 +68,7 @@ g++ -std=c++11 main.cpp src/get_data.cpp -o app -I/opt/homebrew/opt/sfml/include
 
 ### 2. **Running Tests (Optional)**
 
-If you have unit tests written for the project using Google Test (`gtest`), you can compile and run them as follows:
-
-```bash
-g++ main.cpp -c
-g++ main_test.cpp -c
-g++ main.o main_test.o -lgtest -lgtest_main -lpthread -o test_executable
-
-./test_executable
-```
+If you have unit tests written for the project using Google Test (`gtest`), you can go to googletest brunch
 
 ## **Features**
 
