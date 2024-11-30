@@ -7,10 +7,10 @@
     #include <nlohmann/json.hpp>
     #define OS_NAME "Windows"
 #elif defined(__APPLE__) || defined(__MACH__)
-    #include "../json.hpp" // Include for macOS
+    #include <nlohmann/json.hpp>
     #define OS_NAME "macOS"
 #elif defined(__linux__)
-    #include "json.hpp" // Include for Linux
+    #include <nlohmann/json.hpp>
     #define OS_NAME "Linux"
 #else
     #define OS_NAME "Unknown platform"
