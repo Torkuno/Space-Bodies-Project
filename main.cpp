@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <filesystem>
 #include <string>
 #include "src/get_data.h"
 #include "src/planets.h"  // Include the planets header
@@ -7,6 +9,8 @@
 #include <cstdlib>
 
 using namespace std;
+namespace fs = std::filesystem;
+std::ofstream file;
 
 // ** Class Definitions **
 
@@ -60,6 +64,8 @@ public:
         cout << "Planet Name: " << name << ", Mass: " << mass << " kg, Diameter: " << diameter << " km" << endl;
         cout << "Surface Gravity: " << calculateSurfaceGravity() << " m/s^2" << endl;
         cout << "Escape Velocity: " << calculateEscapeVelocity() << " km/s" << endl;
+        // add infos to CSV file
+        file << "," << name << ", , ," << diameter << ", , , , , ," << mass << "," << calculateSurfaceGravity() << ", ," << calculateEscapeVelocity() << "\n";
     }
 
     // Destructor
@@ -123,6 +129,8 @@ public:
         cout << "Mass: " << mass << " kg" << endl;
         cout << "Surface Gravity: " << calculateSurfaceGravity() << " m/s^2" << endl;
         cout << "Impact Energy: " << calculateImpactEnergy() << " megatons of TNT" << endl;
+        // add infos to CSV file
+        file << id << "," << name << "," << nasa_jpl_url << "," << absolute_magnitude << "," << minDiameterKm << "," << maxDiameterKm << "," << isDangerous << "," << closeApproachDate << "," << relativeVelocityKmPerS << "," << missDistanceKm << "," << mass << "," << calculateSurfaceGravity() << "," << calculateImpactEnergy() << "\n";
     }
 
     // Calculate impact energy in megatons of TNT
@@ -271,6 +279,30 @@ void handlePlanetOptions(Asteroid& asteroid) {
 
 int main() {
     loadEnvFile(".env");
+
+    // open CSV file for store user info he discovered during execution:
+    std::string nextCsvName = "user_discovered.csv";
+    file.open(nextCsvName);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << nextCsvName << std::endl;
+        return 1;
+    }
+    // Write the column headers to the file
+    file << "Asteroid ID,"
+    "Name,"
+    "NASA JPL URL,"
+    "Absolute Magnitude (H),"
+    "Min Diameter,"
+    "Max Diameter,"
+    "Is Potentially Hazardous,"
+    "Close Approach Date (YYYY-MM-DD),"
+    "Relative Velocity (km/s),"
+    "Miss Distance (km),"
+    "Mass (kg),"
+    "Surface Gravity (m/s^2),"
+    "Impact Energy (TNT),"
+    "Escape Velocity (km/s),"
+    "\n\n\n";
 
     bool continueAnalyzing = true;
     while (continueAnalyzing) {

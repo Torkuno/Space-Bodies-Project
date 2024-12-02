@@ -3,6 +3,7 @@
 #include <fstream>
 #include <curl/curl.h>
 #include <cstdlib>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -153,6 +154,5 @@ json process_neo_data(const json& jsonData, const string& selectedDate) {
         cerr << "Error processing data: " << e.what() << endl;
         return {}; // Return an empty JSON object
     }
-    // Default return in case none of the above conditions are met
     return {};
 }

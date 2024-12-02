@@ -1,0 +1,5 @@
+Asteroid ID,Name,NASA JPL URL,Absolute Magnitude (H),Min Diameter,Max Diameter,Is Potentially Hazardous,Close Approach Date (YYYY-MM-DD),Relative Velocity (km/s),Miss Distance (km),Mass (kg),Surface Gravity (m/s^2),Impact Energy (TNT),Escape Velocity (km/s),
+
+
+54465521,(2024 PJ1),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54465521,24.58,0.0322519,0.0721174,0,2023-05-06,7.55859,1.56194e+07,3.20933e+08,8.23702e-05,2.19116
+,Neptune, , ,49244, , , , , ,1.02413e+26,11.2749, ,23.5632
