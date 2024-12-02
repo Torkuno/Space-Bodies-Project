@@ -47,10 +47,15 @@ This project is configured to be compiled and run from VSCode. Follow these step
 1. Open **VSCode** and go to **Settings** (Ctrl + ,).
 2. Search for `include path`.
 3. Scroll down to the **Include Path** section and press `Add Item`.
-4. Add:
+4. Add the following address:
+
+  _Windows_
    ```
-   C:\msys64\mingw64\include  # For Windows
-   /opt/homebrew/include  # For macOS
+   C:\msys64\mingw64\include
+   ```
+_MacOS_
+   ```
+   /opt/homebrew/include
    ```
 5. Now, you can compile the code using the `.vscode` configuration (like `launch.json`, `settings.json`, `tasks.json`).
 
@@ -58,11 +63,27 @@ This project is configured to be compiled and run from VSCode. Follow these step
 
 ### 1. **Run the Main Application**
 
-To run the main application that visualizes the asteroid's orbit around Earth:
+To run the near-Earth object analyzer, you have two options:
 
+- You can build and run the app directly from VSCode.
+
+- You can build and run the app from the command line.
+
+Use the following commands if you decide to build the app from the command line:
+
+_Windows_
+```bash
+g++ -fdiagnostics-color=always -g main.cpp src/get_data.cpp -o main.exe -lcurl -lsfml-graphics -lsfml-window -lsfml-system
+```
+```
+main.exe
+```
+
+_MacOS_
 ```bash
 g++ -std=c++11 main.cpp src/get_data.cpp -o app -I/opt/homebrew/opt/sfml/include -L/opt/homebrew/opt/sfml/lib -lsfml-graphics -lsfml-window -lsfml-system -lcurl
-
+```
+```
 ./app
 ```
 

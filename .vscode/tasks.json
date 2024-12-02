@@ -12,7 +12,10 @@
                 "src/get_data.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-lcurl"
+                "-lcurl",
+                "-lsfml-graphics",
+                "-lsfml-window",
+                "-lsfml-system"
             ],
             "options": {
                 "cwd": "${fileDirname}"
