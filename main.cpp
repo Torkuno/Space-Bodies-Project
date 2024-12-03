@@ -11,7 +11,7 @@
 #include <fstream>
 
 using namespace std;
-namespace fs = std::filesystem;
+namespace fs = std::__fs::filesystem;
 std::ofstream file;
 
 // Constants for scaling and positioning
