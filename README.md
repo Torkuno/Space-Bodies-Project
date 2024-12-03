@@ -89,7 +89,21 @@ g++ -std=c++11 main.cpp src/get_data.cpp -o app -I/opt/homebrew/opt/sfml/include
 
 ### 2. **Running Tests (Optional)**
 
-If you have unit tests written for the project using Google Test (`gtest`), you can go to googletest brunch
+If you have unit tests written for the project using Google Test (`gtest`), you can go to googletest branch
+
+### Memory Leak Analysis
+
+As part of the development process, memory leaks tests were conducted. The analysis was performed using `leaks` (tool compatible on macOS). Here are the results of the test:
+  - Tool Used: /usr/bin/leaks
+  - Platform: macOS (Version 15.1.1, Build 24B91)
+  - Architecture: ARM64
+  - **Results**:
+    - Nodes Allocated: 2,525 (totaling 397 KB)
+    - Memory Leaks Found: 0
+    - Total Leaked Bytes: 0
+
+The **absence of memory leaks** confirms that the application efficiently manages memory and is free from issues related to memory allocation and deallocation.
+
 
 ## **Features**
 
