@@ -503,6 +503,7 @@ int main() {
         }
     } catch (const std::ios_base::failure& e) {
         cerr << "File operation error: " << e.what() << endl;
+        cerr << "Possible reasons: Invalid directory path or lack of permissions." << endl;
         return 1;
     } catch (const std::exception& e) {
         cerr << "An unexpected error occurred: " << e.what() << endl;
