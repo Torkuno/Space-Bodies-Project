@@ -25,6 +25,31 @@
             ],
             "group": "build",
             "detail": "Use on Windows"
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++ build for Mac",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${file}",
+                "src/get_data.cpp",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-lcurl",
+                "-lsfml-graphics",
+                "-lsfml-window",
+                "-lsfml-system"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "Use on Mac"
         }
     ]
 }
