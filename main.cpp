@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 #include "src/get_data.h"
 #include "src/planets.h"
 #include <cstdlib>
