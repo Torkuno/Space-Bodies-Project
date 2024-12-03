@@ -1,4 +1,14 @@
 Asteroid ID,Name,NASA JPL URL,Absolute Magnitude (H),Min Diameter,Max Diameter,Is Potentially Hazardous,Close Approach Date (YYYY-MM-DD),Relative Velocity (km/s),Miss Distance (km),Mass (kg),Surface Gravity (m/s^2),Impact Energy (TNT),Escape Velocity (km/s),
 
 
-54319452,(2022 UB7),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54319452,24.05,0.0411675,0.0920534,0,2022-05-10,9.42364,6.05554e+07,6.67443e+08,0.00010514,7.0832
+54349260,(2023 FG),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54349260,27.49,0.00844413,0.0188817,0,2022-03-03,24.6494,7.02543e+07,5.75989e+06,2.1566e-05,0.418221
+,Earth, , ,12742, , , , , ,5.97237e+24,9.82058, ,11.1863
+54349260,(2023 FG),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54349260,27.49,0.00844413,0.0188817,0,2022-03-03,24.6494,7.02543e+07,5.75989e+06,2.1566e-05,0.418221
+54290058,(2022 NU1),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54290058,24.44,0.0343997,0.0769201,0,2022-03-03,10.0295,4.99298e+07,3.89416e+08,8.78557e-05,4.6811
+54349260,(2023 FG) & (2022 NU1),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54349260,27.49,0.0428439,0.0958018,1,2022-03-03,34.6789,1.20184e+08,3.95176e+08,0.00147961,56.7936
+54354397,(2023 GC2),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54354397,27.29,0.00925881,0.0207033,0,2022-04-05,6.3784,7.32834e+06,7.59301e+06,2.36467e-05,0.0369161
+,Earth, , ,12742, , , , , ,5.97237e+24,9.82058, ,11.1863
+54354397,(2023 GC2),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54354397,27.29,0.00925881,0.0207033,0,2022-04-05,6.3784,7.32834e+06,7.59301e+06,2.36467e-05,0.0369161
+54269648,(2022 GY2),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54269648,21.69,0.122055,0.272923,1,2022-04-05,30.7608,2.27207e+06,1.73946e+10,0.000311724,1966.92
+54354397,(2023 GC2) & (2022 GY2),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54354397,27.29,0.131314,0.293626,1,2022-04-05,37.1392,9.60041e+06,1.74022e+10,0.054195,2868.44
+54402636,(2023 VV1),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=54402636,28.94,0.00433067,0.00968367,0,2020-04-09,5.33966,5.01919e+07,776988,1.10604e-05,0.0026474
