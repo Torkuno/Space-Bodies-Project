@@ -32,6 +32,11 @@ void drawSlider(sf::RenderWindow& window, sf::RectangleShape& slider, sf::Rectan
             timeElapsed = (handle.getPosition().x - slider.getPosition().x) / (slider.getSize().x - handle.getSize().x);
         }
     }
+    else{
+        timeElapsed += 0.001;
+        if (timeElapsed > 1) timeElapsed -= 1;
+        sf::sleep(sf::milliseconds(10));
+    }
 
     // Draw slider and handle
     window.draw(slider);
@@ -235,7 +240,7 @@ void handlePlanetOptions(Asteroid& asteroid) {
 
                 // Load Earth texture
                 sf::Texture earthTexture;
-                if (!earthTexture.loadFromFile("Earth_Image.jpeg")) {
+                if (!earthTexture.loadFromFile("Earth_Image.png")) {
                     cerr << "Error loading Earth texture." << endl;
                 }
                 sf::Sprite earthSprite;
@@ -259,6 +264,20 @@ void handlePlanetOptions(Asteroid& asteroid) {
                 sf::CircleShape asteroidShape(10);  // Represent the asteroid
                 asteroidShape.setFillColor(sf::Color::Red);
 
+                // Draw orbital line
+                sf::CircleShape ellipse((int)semiMinorAxis);
+                ellipse.setFillColor(sf::Color(0, 0, 0));
+
+
+                ellipse.setScale(semiMajorAxis/semiMinorAxis, 1);
+
+                ellipse.setPosition(WINDOW_CENTER_X - ellipse.getLocalBounds().width,
+                                        WINDOW_CENTER_Y - ellipse.getLocalBounds().height / 2);
+
+                ellipse.setOutlineThickness(3);
+                ellipse.setOutlineColor(sf::Color(30, 30, 30));
+
+
                 while (window.isOpen()) {
                     sf::Event event;
                     while (window.pollEvent(event)) {
@@ -275,6 +294,8 @@ void handlePlanetOptions(Asteroid& asteroid) {
 
                     // Clear window
                     window.clear();
+
+                    window.draw(ellipse);
 
                     // Draw Earth
                     window.draw(earthSprite);
