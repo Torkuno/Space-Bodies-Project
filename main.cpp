@@ -20,19 +20,30 @@ const float WINDOW_CENTER_Y = 400;
 float timeElapsed = 0.0f;
 bool draggingSlider = false;
 
+class CustomException : public std::exception {
+private:
+    std::string message_;
+public:
+    CustomException(const std::string& msg) : message_(msg) {}
+
+    const char* what() const noexcept override {
+        return message_.c_str();
+    }
+};
+
 // RAII class to handle file operations
 class FileHandler {
 public:
     FileHandler(const std::string& filename) {
         file.open(filename);
         if (!file.is_open()) {
-            throw std::ios_base::failure("Failed to open file: " + filename);
+            throw CustomException("Failed to open file: " + filename);
         }
     }
 
     void write(const std::string& data) {
         if (!file.is_open()) {
-            throw std::ios_base::failure("Attempt to write to a closed file");
+            throw CustomException("Attempt to write to a closed file.");
         }
         file << data;
     }
@@ -384,7 +395,7 @@ int main() {
             string apiKey = apiKeyEnv ? apiKeyEnv : "";
 
             if (apiKey.empty()) {
-                cerr << "API key is missing. Please set the API_KEY environment variable." << endl;
+                throw CustomException("API key is missing. Please set the API_KEY environment variable.");
                 return 1;
             }
 
@@ -395,7 +406,7 @@ int main() {
             if (neo_data.empty()) {
                 cerr << "Failed to fetch data from NASA API. Loading data from file..." << endl;
                 if (!load_from_file(jsonData, "data.json")) {
-                    cerr << "Failed to load data from file." << endl;
+                    throw CustomException("Failed to load data from file.");
                     return 1;
                 }
                 selectedNeoJson = process_neo_data(jsonData, selectedDate);
@@ -404,7 +415,7 @@ int main() {
                     jsonData = json::parse(neo_data);
                     selectedNeoJson = process_neo_data(jsonData, selectedDate);
                 } catch (const exception& e) {
-                    cerr << "Error parsing data: " << e.what() << endl;
+                    throw CustomException("Error parsing data: " + std::string(e.what()));
                     return 1;
                 }
             }
@@ -486,7 +497,9 @@ int main() {
                         }
                     }
 
-                } catch (const exception& e) {
+                } catch (const CustomException& e) {
+                    cerr << "Caught Exception: " << e.what() << endl;
+                } catch (const std::exception& e) {
                     cerr << "Error creating Asteroid object: " << e.what() << endl;
                 }
             } else {
@@ -501,6 +514,9 @@ int main() {
                 cout << "Exiting the NEO Analyzer. Goodbye!" << endl;
             }
         }
+    } catch (const CustomException& e) {
+        cerr << "Custom Exception: " << e.what() << endl;
+        return 1;
     } catch (const std::ios_base::failure& e) {
         cerr << "File operation error: " << e.what() << endl;
         cerr << "Possible reasons: Invalid directory path or lack of permissions." << endl;
