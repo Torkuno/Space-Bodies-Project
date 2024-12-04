@@ -422,7 +422,7 @@ void handlePlanetOptions(Asteroid& asteroid, FileHandler& fileHandler) {
 int main() {
     try {
         loadEnvFile(".env");
-        FileHandler fileHandler("user_discovered.csv");
+        FileHandler fileHandler("../user_discovered.csv");
 
         // Write the column headers to the file
         fileHandler.write("Asteroid ID,Name,NASA JPL URL,Absolute Magnitude (H),Min Diameter,Max Diameter,Is Potentially Hazardous,Close Approach Date (YYYY-MM-DD),Relative Velocity (km/s),Miss Distance (km),Mass (kg),Surface Gravity (m/s^2),Impact Energy (TNT),Escape Velocity (km/s)\n\n\n");
@@ -479,6 +479,7 @@ int main() {
 
                         switch (choice) {
                             case 1:
+                                asteroid1.printInfoToFile(fileHandler);
                                 asteroid1.printInfo();
                                 break;
                             case 2:
