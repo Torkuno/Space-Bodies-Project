@@ -23,5 +23,6 @@ nlohmann::json process_neo_data(const nlohmann::json& jsonData, const std::strin
 
 // Fetches NEO data from NASA's API for a specific date
 std::string fetch_neo_data(const std::string& date, const std::string& apiKey);
+int validateMenuChoice(int min, int max);
 
 #endif // GET_DATA_H

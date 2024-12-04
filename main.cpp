@@ -3,12 +3,14 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cmath>
+#include <regex>
 #include "src/get_data.h"
 #include "src/planets.h"
 #include <cstdlib>
 #include <fstream>
 #include <exception>
+#include <iomanip>
+#include <sstream>
 
 using namespace std;
 
@@ -58,6 +60,52 @@ public:
 private:
     std::ofstream file;
 };
+
+// Function to validate date input (3 tries allowed)
+string validateDateInput() {
+    string date;
+    regex datePattern(R"(\d{4}-\d{2}-\d{2})");
+
+    for (int attempts = 1; attempts <= 3; ++attempts) {
+        cin >> date;
+        if (regex_match(date, datePattern)) {
+            // Further validation to check if the date is logical
+            stringstream ss(date);
+            string token;
+            vector<int> dateParts;
+
+            while (getline(ss, token, '-')) {
+                dateParts.push_back(stoi(token));
+            }
+
+            int year = dateParts[0];
+            int month = dateParts[1];
+            int day = dateParts[2];
+
+            if (year < 1900 || year > 2100) {
+                cerr << "Year must be between 1900 and 2100. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if (month < 1 || month > 12) {
+                cerr << "Month must be between 1 and 12. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if (day < 1 || day > 31) {
+                cerr << "Day must be between 1 and 31. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if ((month == 4 || month == 6 || month == 9 || month == 11) && day > 30) {
+                cerr << "The entered month has only 30 days. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if (month == 2 && day > 29) {
+                cerr << "February cannot have more than 29 days. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if (month == 2 && day == 29 && !((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))) {
+                cerr << "Entered year is not a leap year, February has only 28 days. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else {
+                return date; // Valid date
+            }
+        } else {
+            cerr << "Invalid date format. Please enter a date in the format YYYY-MM-DD. (" << attempts << "/3 tries)" << endl;
+        }
+        if (attempts == 3) {
+            throw runtime_error("Exceeded the maximum number of attempts for date input.");
+        }
+    }
+    return ""; // Default return to prevent compilation issues (logic will always return before this line)
+}
 
 // Function to create and manage the slider
 void drawSlider(sf::RenderWindow& window, sf::RectangleShape& slider, sf::RectangleShape& handle, float& timeElapsed) {
@@ -267,24 +315,18 @@ void handlePlanetOptions(Asteroid& asteroid, FileHandler& fileHandler) {
         cout << "4. Exit planet analysis.\n";
         cout << "Enter your choice: ";
 
-        int planetChoice;
-        cin >> planetChoice;
+        int planetChoice = validateMenuChoice(1, 4);
 
         switch (planetChoice) {
             case 1: {
                 for (size_t i = 0; i < predefinedPlanets.size(); ++i) {
                     cout << i + 1 << ". " << predefinedPlanets[i].name << endl;
                 }
-                int planetSelection;
-                cin >> planetSelection;
+                int planetSelection = validateMenuChoice(1, predefinedPlanets.size());
 
-                if (planetSelection > 0 && planetSelection <= predefinedPlanets.size()) {
-                    const auto& planetData = predefinedPlanets[planetSelection - 1];
-                    Planet planet(planetData.name, planetData.diameter, planetData.mass);
-                    planet.printInfo(fileHandler);
-                } else {
-                    cout << "Invalid selection.\n";
-                }
+                const auto& planetData = predefinedPlanets[planetSelection - 1];
+                Planet planet(planetData.name, planetData.diameter, planetData.mass);
+                planet.printInfo(fileHandler);
                 break;
             }
             case 3: {
@@ -387,10 +429,9 @@ int main() {
 
         bool continueAnalyzing = true;
         while (continueAnalyzing) {
-            string selectedDate;
             cout << "\n\nWelcome to the NEO Analyzer!" << endl;
             cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
-            cin >> selectedDate;
+            string selectedDate = validateDateInput();
 
             const char* apiKeyEnv = getenv("API_KEY");
             string apiKey = apiKeyEnv ? apiKeyEnv : "";
@@ -413,8 +454,8 @@ int main() {
                 try {
                     jsonData = json::parse(neo_data);
                     selectedNeoJson = process_neo_data(jsonData, selectedDate);
-                } catch (const std::exception& e) {
-                    throw DataProcessingException("Error parsing data: " + std::string(e.what()));
+                } catch (const std::runtime_error& e) {
+                    throw runtime_error(std::string(e.what()));
                 }
             }
 
@@ -434,8 +475,7 @@ int main() {
                         cout << "6. Exit or Return to main menu.\n";
                         cout << "Enter your choice: ";
 
-                        int choice;
-                        cin >> choice;
+                        int choice = validateMenuChoice(1, 6);
 
                         switch (choice) {
                             case 1:
@@ -449,9 +489,8 @@ int main() {
                                 break;
                             case 4: {
                                 asteroid1.printInfo();
-                                string selectedDate2;
                                 cout << "\nEnter a second date (YYYY-MM-DD) to search for NEOs: ";
-                                cin >> selectedDate2;
+                                string selectedDate2 = validateDateInput();
                                 string neo_data2 = fetch_neo_data(selectedDate2, apiKey);
 
                                 if (!neo_data2.empty()) {
@@ -496,9 +535,7 @@ int main() {
 
                 } catch (const DataProcessingException& e) {
                     cerr << "Caught Data Processing Exception: " << e.what() << endl;
-                } catch (const std::exception& e) {
-                    cerr << "Error creating Asteroid object: " << e.what() << endl;
-                }
+                } 
             } else {
                 cout << "No asteroid selected.\n";
             }
