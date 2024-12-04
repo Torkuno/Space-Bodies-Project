@@ -1,17 +1,38 @@
-#include "get_data.h"
 #include <iostream>
 #include <fstream>
 #include <curl/curl.h>
 #include <cstdlib>
+#include "get_data.h"
+#include <exception>
 
 using namespace std;
+
+// Custom Exceptions for file not found and API request errors
+class FileNotFoundException : public std::exception {
+private:
+    std::string message_;
+public:
+    FileNotFoundException(const std::string& msg) : message_(msg) {}
+    const char* what() const noexcept override {
+        return message_.c_str();
+    }
+};
+
+class ApiRequestException : public std::exception {
+private:
+    std::string message_;
+public:
+    ApiRequestException(const std::string& msg) : message_(msg) {}
+    const char* what() const noexcept override {
+        return message_.c_str();
+    }
+};
 
 // Function to load environment variables from a file
 void loadEnvFile(const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Could not open .env file" << endl;
-        return;
+        throw FileNotFoundException("Could not open .env file: " + filename);
     }
 
     string line;
@@ -54,14 +75,16 @@ string fetch_neo_data(const string& date, const string& apiKey) {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &neo_data);
 
         res = curl_easy_perform(curl);
-
         if (res != CURLE_OK) {
-            cerr << "cURL request failed: " << curl_easy_strerror(res) << endl;
-            neo_data = "";  // Return empty string if the request fails
+            curl_easy_cleanup(curl);
+            throw ApiRequestException("cURL error: " + string(curl_easy_strerror(res)));
         }
 
         curl_easy_cleanup(curl);
+    } else {
+        throw ApiRequestException("Failed to initialize cURL");
     }
+
     return neo_data;
 }
 
@@ -69,10 +92,17 @@ string fetch_neo_data(const string& date, const string& apiKey) {
 bool load_from_file(json& jsonData, const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Could not open the file!" << endl;
-        return false;
+        throw FileNotFoundException("Could not open file: " + filename);
     }
-    file >> jsonData;
+
+    try {
+        file >> jsonData;
+    } catch (const exception& e) {
+        file.close();
+        throw;  // Rethrow to allow higher-level handling
+    }
+
+    file.close();
     return true;
 }
 
@@ -119,39 +149,53 @@ void output_neo_data(const json& neo) {
         bool is_sentry_object = neo["is_sentry_object"];
         cout << "\nIs Sentry Object: " << (is_sentry_object ? "Yes" : "No") << endl;
 
-    } catch (const exception& e) {
-        cerr << "Error processing NEO data: " << e.what() << endl;
+    } catch (const exception&) {
+        throw;  // Rethrow exception for higher-level handling
     }
+}
+
+// Function to validate menu choice (3 tries allowed)
+int validateMenuChoice(int min, int max) {
+    int choice;
+    for (int attempts = 1; attempts <= 3; ++attempts) {
+        cin >> choice;
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cerr << "Invalid input. Please enter an integer value. (" << attempts << "/3 tries)" << endl;
+        } else {
+            if (choice >= min && choice <= max) {
+                return choice; // Valid input
+            } else {
+                cerr << "Input out of range. Please enter a number between " << min << " and " << max << ". (" << attempts << "/3 tries)" << endl;
+            }
+        }
+        if (attempts == 3) {
+            throw runtime_error("Exceeded the maximum number of attempts for menu input.");
+        }
+    }
+    return min; // Default return to prevent compilation issues (logic will always return before this line)
 }
 
 // Function to process NEO data from NASA API or local file
 json process_neo_data(const json& jsonData, const string& selectedDate) {
-    try {
-        auto& neo_objects = jsonData["near_earth_objects"];
-        if (neo_objects.contains(selectedDate)) {
-            auto neos = neo_objects[selectedDate];
-            cout << "\nThere are " << neos.size() << " NEOs for the date " << selectedDate << ".\n";
-
-            for (size_t i = 0; i < neos.size(); i++) {
-                cout << i + 1 << ". " << neos[i]["name"] << endl;
-            }
-
-            int neo_choice;
-            cout << "\nSelect a NEO by number: ";
-            cin >> neo_choice;
-
-            if (neo_choice > 0 && neo_choice <= neos.size()) {
-                return neos[neo_choice - 1]; // Return the selected NEO JSON object
-            } else {
-                cout << "Invalid choice, please select a valid NEO number." << endl;
-            }
-        } else {
-            cout << "No NEO data available for the selected date." << endl;
-            return {}; // Return an empty JSON object
-        }
-    } catch (const exception& e) {
-        cerr << "Error processing data: " << e.what() << endl;
-        return {}; // Return an empty JSON object
+    auto& neo_objects = jsonData["near_earth_objects"];
+    if (neo_objects.find(selectedDate) == neo_objects.end()) {
+        cout << "No NEO data found for the selected date: " << selectedDate << endl;
+        return {};  // Instead of throwing, return an empty JSON object to handle retries.
     }
-    return {};
+
+    auto& neos = neo_objects[selectedDate];
+    if (neos.empty()) {
+        cout << "No NEOs found for the selected date: " << selectedDate << endl;
+        return {};  // Instead of throwing, return an empty JSON object to handle retries.
+    }
+
+    cout << "\nThere are " << neos.size() << " NEOs for the date " << selectedDate << ".\n";
+    for (size_t i = 0; i < neos.size(); i++) {
+        cout << i + 1 << ". " << neos[i]["name"] << endl;
+    }
+
+    cout << "\nSelect a NEO by number: ";
+    return neos[validateMenuChoice(1, neos.size()) - 1]; // Use validateMenuChoice for input validation.
 }

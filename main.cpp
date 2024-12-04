@@ -3,16 +3,16 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <regex>
 #include "src/get_data.h"
 #include "src/planets.h"
-#include <vector>
-#include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <exception>
+#include <iomanip>
+#include <sstream>
 
 using namespace std;
-namespace fs = std::__fs::filesystem;
-std::ofstream file;
 
 // Constants for scaling and positioning
 const double EARTH_RADIUS = 6371.0;
@@ -21,6 +21,91 @@ const float WINDOW_CENTER_X = 400;
 const float WINDOW_CENTER_Y = 400;
 float timeElapsed = 0.0f;
 bool draggingSlider = false;
+
+// Custom exception to handle data processing errors
+class DataProcessingException : public std::exception {
+private:
+    std::string message_;
+public:
+    DataProcessingException(const std::string& msg) : message_(msg) {}
+
+    const char* what() const noexcept override {
+        return message_.c_str();
+    }
+};
+
+// RAII class to handle file operations
+class FileHandler {
+public:
+    FileHandler(const std::string& filename) {
+        file.open(filename);
+        if (!file.is_open()) {
+            throw std::ios_base::failure("Failed to open file: " + filename);
+        }
+    }
+
+    void write(const std::string& data) {
+        if (!file.is_open()) {
+            throw std::ios_base::failure("Attempt to write to a closed file.");
+        }
+        file << data;
+    }
+
+    ~FileHandler() {
+        if (file.is_open()) {
+            file.close();
+        }
+    }
+
+private:
+    std::ofstream file;
+};
+
+// Function to validate date input (3 tries allowed)
+string validateDateInput() {
+    string date;
+    regex datePattern(R"(\d{4}-\d{2}-\d{2})");
+
+    for (int attempts = 1; attempts <= 3; ++attempts) {
+        cin >> date;
+        if (regex_match(date, datePattern)) {
+            // Further validation to check if the date is logical
+            stringstream ss(date);
+            string token;
+            vector<int> dateParts;
+
+            while (getline(ss, token, '-')) {
+                dateParts.push_back(stoi(token));
+            }
+
+            int year = dateParts[0];
+            int month = dateParts[1];
+            int day = dateParts[2];
+
+            if (year < 1900 || year > 2100) {
+                cerr << "Year must be between 1900 and 2100. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if (month < 1 || month > 12) {
+                cerr << "Month must be between 1 and 12. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if (day < 1 || day > 31) {
+                cerr << "Day must be between 1 and 31. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if ((month == 4 || month == 6 || month == 9 || month == 11) && day > 30) {
+                cerr << "The entered month has only 30 days. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if (month == 2 && day > 29) {
+                cerr << "February cannot have more than 29 days. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else if (month == 2 && day == 29 && !((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))) {
+                cerr << "Entered year is not a leap year, February has only 28 days. Please enter again. (" << attempts << "/3 tries)" << endl;
+            } else {
+                return date; // Valid date
+            }
+        } else {
+            cerr << "Invalid date format. Please enter a date in the format YYYY-MM-DD. (" << attempts << "/3 tries)" << endl;
+        }
+        if (attempts == 3) {
+            throw runtime_error("Exceeded the maximum number of attempts for date input.");
+        }
+    }
+    return ""; // Default return to prevent compilation issues (logic will always return before this line)
+}
 
 // Function to create and manage the slider
 void drawSlider(sf::RenderWindow& window, sf::RectangleShape& slider, sf::RectangleShape& handle, float& timeElapsed) {
@@ -33,8 +118,7 @@ void drawSlider(sf::RenderWindow& window, sf::RectangleShape& slider, sf::Rectan
             // Update time based on slider position (normalized between 0 and 1)
             timeElapsed = (handle.getPosition().x - slider.getPosition().x) / (slider.getSize().x - handle.getSize().x);
         }
-    }
-    else{
+    } else {
         timeElapsed += 0.001;
         if (timeElapsed > 1) timeElapsed -= 1;
         sf::sleep(sf::milliseconds(10));
@@ -87,12 +171,13 @@ public:
     Planet(const string& name, double diameter, double mass)
         : SpaceBody(name, diameter, mass) {}
 
-    void printInfo() const override {
+    void printInfo(FileHandler& fileHandler) const {
         cout << "Planet Name: " << name << ", Mass: " << mass << " kg, Diameter: " << diameter << " km" << endl;
         cout << "Surface Gravity: " << calculateSurfaceGravity() << " m/s^2" << endl;
         cout << "Escape Velocity: " << calculateEscapeVelocity() << " km/s" << endl;
-        // add infos to CSV file
-        file << "," << name << ", , ," << diameter << ", , , , , ," << mass << "," << calculateSurfaceGravity() << ", ," << calculateEscapeVelocity() << "\n";
+        // Add info to CSV file
+        fileHandler.write("," + name + ", , ," + to_string(diameter) + ", , , , , ," +
+                          to_string(mass) + "," + to_string(calculateSurfaceGravity()) + ", ," + to_string(calculateEscapeVelocity()) + "\n");
     }
 
     ~Planet() {
@@ -140,7 +225,7 @@ public:
         mass = calculateMass(asteroidData);
     }
 
-    void printInfo() const override {
+    void printInfo() const {
         cout << "Asteroid ID: " << id << endl;
         cout << "Name: " << name << endl;
         cout << "NASA JPL URL: " << nasa_jpl_url << endl;
@@ -153,8 +238,17 @@ public:
         cout << "Mass: " << mass << " kg" << endl;
         cout << "Surface Gravity: " << calculateSurfaceGravity() << " m/s^2" << endl;
         cout << "Impact Energy: " << calculateImpactEnergy() << " megatons of TNT" << endl;
-        // add infos to CSV file
-        file << id << "," << name << "," << nasa_jpl_url << "," << absolute_magnitude << "," << minDiameterKm << "," << maxDiameterKm << "," << isDangerous << "," << closeApproachDate << "," << relativeVelocityKmPerS << "," << missDistanceKm << "," << mass << "," << calculateSurfaceGravity() << "," << calculateImpactEnergy() << "\n";
+    }
+
+    void printInfoToFile(FileHandler& fileHandler) const {
+        // Write asteroid information to the CSV file using FileHandler
+        string data = id + "," + name + "," + nasa_jpl_url + "," + to_string(absolute_magnitude) + "," +
+                      to_string(minDiameterKm) + "," + to_string(maxDiameterKm) + "," +
+                      (isDangerous ? "Yes" : "No") + "," + closeApproachDate + "," +
+                      to_string(relativeVelocityKmPerS) + "," + to_string(missDistanceKm) + "," +
+                      to_string(mass) + "," + to_string(calculateSurfaceGravity()) + "," +
+                      to_string(calculateImpactEnergy()) + "\n";
+        fileHandler.write(data);
     }
 
     double calculateImpactEnergy() const {
@@ -211,7 +305,7 @@ private:
     }
 };
 
-void handlePlanetOptions(Asteroid& asteroid) {
+void handlePlanetOptions(Asteroid& asteroid, FileHandler& fileHandler) {
     bool planetMenu = true;
     while (planetMenu) {
         cout << "\nPlease select an option:\n";
@@ -221,24 +315,18 @@ void handlePlanetOptions(Asteroid& asteroid) {
         cout << "4. Exit planet analysis.\n";
         cout << "Enter your choice: ";
 
-        int planetChoice;
-        cin >> planetChoice;
+        int planetChoice = validateMenuChoice(1, 4);
 
         switch (planetChoice) {
             case 1: {
                 for (size_t i = 0; i < predefinedPlanets.size(); ++i) {
                     cout << i + 1 << ". " << predefinedPlanets[i].name << endl;
                 }
-                int planetSelection;
-                cin >> planetSelection;
+                int planetSelection = validateMenuChoice(1, predefinedPlanets.size());
 
-                if (planetSelection > 0 && planetSelection <= predefinedPlanets.size()) {
-                    const auto& planetData = predefinedPlanets[planetSelection - 1];
-                    Planet planet(planetData.name, planetData.diameter, planetData.mass);
-                    planet.printInfo();
-                } else {
-                    cout << "Invalid selection.\n";
-                }
+                const auto& planetData = predefinedPlanets[planetSelection - 1];
+                Planet planet(planetData.name, planetData.diameter, planetData.mass);
+                planet.printInfo(fileHandler);
                 break;
             }
             case 3: {
@@ -332,158 +420,146 @@ void handlePlanetOptions(Asteroid& asteroid) {
 }
 
 int main() {
-    loadEnvFile(".env");
-    // open CSV file for store user info he discovered during execution:
-    std::string nextCsvName = "user_discovered.csv";
-    file.open(nextCsvName);
-    if (!file.is_open()) {
-        std::cerr << "Error opening file: " << nextCsvName << std::endl;
+    try {
+        loadEnvFile(".env");
+        FileHandler fileHandler("user_discovered.csv");
+
+        // Write the column headers to the file
+        fileHandler.write("Asteroid ID,Name,NASA JPL URL,Absolute Magnitude (H),Min Diameter,Max Diameter,Is Potentially Hazardous,Close Approach Date (YYYY-MM-DD),Relative Velocity (km/s),Miss Distance (km),Mass (kg),Surface Gravity (m/s^2),Impact Energy (TNT),Escape Velocity (km/s)\n\n\n");
+
+        bool continueAnalyzing = true;
+        while (continueAnalyzing) {
+            cout << "\n\nWelcome to the NEO Analyzer!" << endl;
+            cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
+            string selectedDate = validateDateInput();
+
+            const char* apiKeyEnv = getenv("API_KEY");
+            string apiKey = apiKeyEnv ? apiKeyEnv : "";
+
+            if (apiKey.empty()) {
+                throw DataProcessingException("API key is missing. Please set the API_KEY environment variable.");
+            }
+
+            json jsonData;
+            json selectedNeoJson;
+            string neo_data = fetch_neo_data(selectedDate, apiKey);
+
+            if (neo_data.empty()) {
+                cout << "Failed to fetch data from NASA API. Loading data from file..." << endl;
+                if (!load_from_file(jsonData, "data.json")) {
+                    throw DataProcessingException("Failed to load data from file.");
+                }
+                selectedNeoJson = process_neo_data(jsonData, selectedDate);
+            } else {
+                try {
+                    jsonData = json::parse(neo_data);
+                    selectedNeoJson = process_neo_data(jsonData, selectedDate);
+                } catch (const std::runtime_error& e) {
+                    throw runtime_error(std::string(e.what()));
+                }
+            }
+
+            if (!selectedNeoJson.empty()) {
+                try {
+                    Asteroid asteroid1(selectedNeoJson);
+                    asteroid1.printInfoToFile(fileHandler);
+
+                    bool asteroidMenu = true;
+                    while (asteroidMenu) {
+                        cout << "\nPlease select an option:\n";
+                        cout << "1. Print all information about the asteroid.\n";
+                        cout << "2. Calculate and display the surface gravity.\n";
+                        cout << "3. Calculate and display the impact energy.\n";
+                        cout << "4. Combine this asteroid with another asteroid.\n";
+                        cout << "5. Analyze planets in the solar system.\n";
+                        cout << "6. Exit or Return to main menu.\n";
+                        cout << "Enter your choice: ";
+
+                        int choice = validateMenuChoice(1, 6);
+
+                        switch (choice) {
+                            case 1:
+                                asteroid1.printInfo();
+                                break;
+                            case 2:
+                                cout << "\nSurface Gravity: " << asteroid1.calculateSurfaceGravity() << " m/s^2\n";
+                                break;
+                            case 3:
+                                cout << "\nImpact Energy: " << asteroid1.calculateImpactEnergy() << " megatons of TNT\n";
+                                break;
+                            case 4: {
+                                asteroid1.printInfo();
+                                cout << "\nEnter a second date (YYYY-MM-DD) to search for NEOs: ";
+                                string selectedDate2 = validateDateInput();
+                                string neo_data2 = fetch_neo_data(selectedDate2, apiKey);
+
+                                if (!neo_data2.empty()) {
+                                    jsonData = json::parse(neo_data2);
+                                    json selectedNeoJson2 = process_neo_data(jsonData, selectedDate2);
+
+                                    if (!selectedNeoJson2.empty()) {
+                                        Asteroid asteroid2(selectedNeoJson2);
+                                        asteroid2.printInfo();
+                                        asteroid2.printInfoToFile(fileHandler);
+
+                                        Asteroid combinedAsteroid = asteroid1 + asteroid2;
+                                        combinedAsteroid.printInfo();
+                                        combinedAsteroid.printInfoToFile(fileHandler);
+                                    } else {
+                                        cout << "No asteroid selected for the second date.\n";
+                                    }
+                                } else {
+                                    cout << "Failed to fetch data for the second date from NASA API.\n";
+                                }
+                                break;
+                            }
+                            case 5:
+                                handlePlanetOptions(asteroid1, fileHandler);
+                                break;
+                            case 6:
+                                asteroidMenu = false;
+                                break;
+                            default:
+                                cout << "Invalid choice.\n";
+                        }
+
+                        if (asteroidMenu) {
+                            cout << "\nDo you want to perform another action on this asteroid? (y/n): ";
+                            char continueChoice;
+                            cin >> continueChoice;
+                            if (continueChoice == 'n' || continueChoice == 'N') {
+                                asteroidMenu = false;
+                            }
+                        }
+                    }
+
+                } catch (const DataProcessingException& e) {
+                    cerr << "Caught Data Processing Exception: " << e.what() << endl;
+                } 
+            } else {
+                cout << "No asteroid selected.\n";
+            }
+
+            cout << "\nDo you want to analyze another asteroid? (y/n): ";
+            char mainChoice;
+            cin >> mainChoice;
+            if (mainChoice == 'n' || mainChoice == 'N') {
+                continueAnalyzing = false;
+                cout << "Exiting the NEO Analyzer. Goodbye!" << endl;
+            }
+        }
+    } catch (const DataProcessingException& e) {
+        cerr << "Data Processing Exception: " << e.what() << endl;
+        return 1;
+    } catch (const std::ios_base::failure& e) {
+        cerr << "File operation error: " << e.what() << endl;
+        return 1;
+    } catch (const std::runtime_error& e) {
+        cerr << "Runtime Error: " << e.what() << endl;
+        return 1;
+    } catch (const std::exception& e) {
+        cerr << "An unexpected error occurred: " << e.what() << endl;
         return 1;
     }
-    // Write the column headers to the file
-    file << "Asteroid ID,"
-    "Name,"
-    "NASA JPL URL,"
-    "Absolute Magnitude (H),"
-    "Min Diameter,"
-    "Max Diameter,"
-    "Is Potentially Hazardous,"
-    "Close Approach Date (YYYY-MM-DD),"
-    "Relative Velocity (km/s),"
-    "Miss Distance (km),"
-    "Mass (kg),"
-    "Surface Gravity (m/s^2),"
-    "Impact Energy (TNT),"
-    "Escape Velocity (km/s),"
-    "\n\n\n";
-
-    bool continueAnalyzing = true;
-    while (continueAnalyzing) {
-        string selectedDate;
-        cout << "\n\nWelcome to the NEO Analyzer!" << endl;
-        cout << "Enter a date (YYYY-MM-DD) to search for NEOs: ";
-        cin >> selectedDate;
-
-        const char* apiKeyEnv = getenv("API_KEY");
-        string apiKey = apiKeyEnv ? apiKeyEnv : "";
-
-        if (apiKey.empty()) {
-            cerr << "API key is missing. Please set the API_KEY environment variable." << endl;
-            return 1;
-        }
-
-        json jsonData;
-        json selectedNeoJson;
-
-        string neo_data = fetch_neo_data(selectedDate, apiKey);
-
-        if (neo_data.empty()) {
-            cerr << "Failed to fetch data from NASA API. Loading data from file..." << endl;
-
-            if (!load_from_file(jsonData, "data.json")) {
-                cerr << "Failed to load data from file." << endl;
-                return 1;
-            }
-
-            selectedNeoJson = process_neo_data(jsonData, selectedDate);
-        } else {
-            try {
-                jsonData = json::parse(neo_data);
-                selectedNeoJson = process_neo_data(jsonData, selectedDate);
-            } catch (const exception& e) {
-                cerr << "Error parsing data: " << e.what() << endl;
-                return 1;
-            }
-        }
-
-        if (!selectedNeoJson.empty()) {
-            try {
-                Asteroid asteroid1(selectedNeoJson);
-
-                bool asteroidMenu = true;
-                while (asteroidMenu) {
-                    cout << "\nPlease select an option:\n";
-                    cout << "1. Print all information about the asteroid.\n";
-                    cout << "2. Calculate and display the surface gravity.\n";
-                    cout << "3. Calculate and display the impact energy.\n";
-                    cout << "4. Combine this asteroid with another asteroid.\n";
-                    cout << "5. Analyze planets in the solar system.\n";
-                    cout << "6. Exit or Return to main menu.\n";
-                    cout << "Enter your choice: ";
-
-                    int choice;
-                    cin >> choice;
-
-                    switch (choice) {
-                        case 1:
-                            asteroid1.printInfo();
-                            break;
-                        case 2:
-                            cout << "\nSurface Gravity: " << asteroid1.calculateSurfaceGravity() << " m/s^2\n";
-                            break;
-                        case 3:
-                            cout << "\nImpact Energy: " << asteroid1.calculateImpactEnergy() << " megatons of TNT\n";
-                            break;
-                        case 4: {
-                            asteroid1.printInfo();
-                            string selectedDate2;
-                            cout << "\nEnter a second date (YYYY-MM-DD) to search for NEOs: ";
-                            cin >> selectedDate2;
-                            string neo_data2 = fetch_neo_data(selectedDate2, apiKey);
-
-                            if (!neo_data2.empty()) {
-                                jsonData = json::parse(neo_data2);
-                                json selectedNeoJson2 = process_neo_data(jsonData, selectedDate2);
-
-                                if (!selectedNeoJson2.empty()) {
-                                    Asteroid asteroid2(selectedNeoJson2);
-                                    asteroid2.printInfo();
-
-                                    Asteroid combinedAsteroid = asteroid1 + asteroid2;
-                                    combinedAsteroid.printInfo();
-                                } else {
-                                    cout << "No asteroid selected for the second date.\n";
-                                }
-                            } else {
-                                cout << "Failed to fetch data for the second date from NASA API.\n";
-                            }
-                            break;
-                        }
-                        case 5:
-                            handlePlanetOptions(asteroid1);
-                            break;
-                        case 6:
-                            asteroidMenu = false;
-                            break;
-                        default:
-                            cout << "Invalid choice.\n";
-                    }
-
-                    if (asteroidMenu) {
-                        cout << "\nDo you want to perform another action on this asteroid? (y/n): ";
-                        char continueChoice;
-                        cin >> continueChoice;
-                        if (continueChoice == 'n' || continueChoice == 'N') {
-                            asteroidMenu = false;
-                        }
-                    }
-                }
-
-            } catch (const exception& e) {
-                cerr << "Error creating Asteroid object: " << e.what() << endl;
-            }
-        } else {
-            cout << "No asteroid selected.\n";
-        }
-
-        cout << "\nDo you want to analyze another asteroid? (y/n): ";
-        char mainChoice;
-        cin >> mainChoice;
-        if (mainChoice == 'n' || mainChoice == 'N') {
-            continueAnalyzing = false;
-            cout << "Exiting the NEO Analyzer. Goodbye!\n";
-        }
-    }
-
     return 0;
 }
