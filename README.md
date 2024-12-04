@@ -59,6 +59,12 @@ _MacOS_
    ```
 5. Now, you can compile the code using the `.vscode` configuration (like `launch.json`, `settings.json`, `tasks.json`).
 
+### 3. Get NASA API Key
+To complete this step and be able to use this program visit [NASA API](https://api.nasa.gov/) and get your API key. Once done, create a `.env` file in the root directory and add the following line:
+```
+API_KEY=your_api_key
+```
+
 ## **Running the Application**
 
 ### 1. **Run the Main Application**
