@@ -334,7 +334,7 @@ void handlePlanetOptions(Asteroid& asteroid, FileHandler& fileHandler) {
 
                 // Load Earth texture
                 sf::Texture earthTexture;
-                if (!earthTexture.loadFromFile("Earth_Image.png")) {
+                if (!earthTexture.loadFromFile("earth_image.png")) {
                     cerr << "Error loading Earth texture." << endl;
                 }
                 sf::Sprite earthSprite;
@@ -535,7 +535,7 @@ int main() {
 
                 } catch (const DataProcessingException& e) {
                     cerr << "Caught Data Processing Exception: " << e.what() << endl;
-                } 
+                }
             } else {
                 cout << "No asteroid selected.\n";
             }

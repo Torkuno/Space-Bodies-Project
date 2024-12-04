@@ -7,7 +7,7 @@ This project visualizes the orbit of near-Earth objects (NEOs) around Earth usin
 - **main.cpp**: Contains the main logic to fetch data, compute asteroid orbits, and render the visualization using SFML (Simple and Fast Multimedia Library).
 - **src/get_data.cpp / get_data.h**: Manages fetching NEO data from NASA's API using cURL.
 - **json.hpp**: Header-only library to handle JSON data.
-- **Earth_Image.jpeg**: Image used as the texture for the Earth in the visualization.
+- **earth_image.png**: Image used as the texture for the Earth in the visualization.
 - **.vscode**: Contains configuration files for compiling and running the code within Visual Studio Code.
 
 ## **Installation Guide**
