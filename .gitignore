@@ -1,5 +1,9 @@
+*
+!*/
+!*.*
 *.o
-*.exe
 .env
-main.dSYM
-main
+*.exe
+*.dSYM
+build/
+user_discovered.csv

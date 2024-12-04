@@ -73,18 +73,18 @@ Use the following commands if you decide to build the app from the command line:
 
 _Windows_
 ```bash
-g++ -fdiagnostics-color=always -g main.cpp src/get_data.cpp -o main.exe -lcurl -lsfml-graphics -lsfml-window -lsfml-system
+g++ -fdiagnostics-color=always -g main.cpp src/get_data.cpp -o neo_analyzer.exe -lcurl -lsfml-graphics -lsfml-window -lsfml-system
 ```
 ```
-main.exe
+neo_analyzer.exe
 ```
 
 _MacOS_
 ```bash
-g++ -std=c++11 main.cpp src/get_data.cpp -o app -I/opt/homebrew/opt/sfml/include -L/opt/homebrew/opt/sfml/lib -lsfml-graphics -lsfml-window -lsfml-system -lcurl
+g++ -std=c++11 main.cpp src/get_data.cpp -o neo_analyzer -I/opt/homebrew/opt/sfml/include -L/opt/homebrew/opt/sfml/lib -lsfml-graphics -lsfml-window -lsfml-system -lcurl
 ```
 ```
-./app
+./neo_analyzer
 ```
 
 ### 2. **Running Tests (Optional)**
