@@ -57,7 +57,7 @@ _MacOS_
    ```
    /opt/homebrew/include
    ```
-5. Now, you can compile the code using the `.vscode` configuration (like `launch.json`, `settings.json`, `tasks.json`).
+5. Now, you can compile the code using the VSCode's configuration.
 
 ### 3. Get NASA API Key
 To complete this step and be able to use this program visit [NASA API](https://api.nasa.gov/) and get your API key. Once done, create a `.env` file in the root directory and add the following line:
@@ -67,11 +67,13 @@ API_KEY=your_api_key
 
 ## **Running the Application**
 
-### 1. **Run the Main Application**
+### **Run the Main Application**
 
-To run the near-Earth object analyzer, you have two options:
+To run the near-Earth object analyzer, you have the following options:
 
 - You can build and run the app directly from VSCode.
+
+- You can build the app with CMake.
 
 - You can build and run the app from the command line.
 
@@ -93,7 +95,58 @@ g++ -std=c++11 main.cpp src/get_data.cpp -o neo_analyzer -I/opt/homebrew/opt/sfm
 ./neo_analyzer
 ```
 
-### 2. **Running Tests (Optional)**
+Alternatively, to build the project using CMake, follow these steps:
+
+### **Install CMake**
+
+Ensure you have CMake installed on your system. You can download it from [CMake's official website](https://cmake.org/download/) or install it via a package manager.
+
+- **On Windows**:
+  - Download and install CMake from the [official website](https://cmake.org/download/).
+
+- **On macOS**:
+  ```bash
+  brew install cmake
+  ```
+
+- **On Linux**
+  ```bash
+  sudo apt-get install cmake
+  ```
+
+### **Build the project**
+
+  **Create a build directory:**
+  ```bash
+  mkdir build
+  cd build
+  ```
+
+  **Run CMake to generate build files:**
+  ```bash
+  cmake ..
+  ```
+
+  **Build the project:**
+  ```bash
+  cmake --build .
+  ```
+
+  **Run the Application**
+
+  After building the project, you can now run the application:
+
+  - **On Windows**
+  ```bash
+  ./NEOAnalyzer.exe
+  ```
+
+  - **On MacOS / Linux**
+  ```bash
+  ./NEOAnalyzer
+  ```
+
+### **Running Tests (Optional)**
 
 If you have unit tests written for the project using Google Test (`gtest`), you can go to googletest branch
 
