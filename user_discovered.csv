@@ -1,0 +1,5 @@
+Asteroid ID,Name,NASA JPL URL,Absolute Magnitude (H),Min Diameter,Max Diameter,Is Potentially Hazardous,Close Approach Date (YYYY-MM-DD),Relative Velocity (km/s),Miss Distance (km),Mass (kg),Surface Gravity (m/s^2),Impact Energy (TNT),Escape Velocity (km/s)
+
+
+3277400,(2005 HN3),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=3277400,21.200000,0.152952,0.342011,No,2024-05-06,7.537789,8435462.348648,34230576887.982449,0.000391,232.423732
+3277400,(2005 HN3),https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=3277400,21.200000,0.152952,0.342011,No,2024-05-06,7.537789,8435462.348648,34230576887.982449,0.000391,232.423732

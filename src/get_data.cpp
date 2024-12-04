@@ -65,28 +65,38 @@ string fetch_neo_data(const string& date, const string& apiKey) {
     CURLcode res;
     string neo_data;
 
-    curl = curl_easy_init();
-    if (curl) {
-        string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
-        string url = baseUrl + "?start_date=" + date + "&end_date=" + date + "&api_key=" + apiKey;
+    try {
+        curl = curl_easy_init();
+        if (curl) {
+            string baseUrl = "https://api.nasa.gov/neo/rest/v1/feed";
+            string url = baseUrl + "?start_date=" + date + "&end_date=" + date + "&api_key=" + apiKey;
 
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &neo_data);
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &neo_data);
 
-        res = curl_easy_perform(curl);
-        if (res != CURLE_OK) {
+            res = curl_easy_perform(curl);
+            if (res != CURLE_OK) {
+                throw ApiRequestException("cURL error: " + string(curl_easy_strerror(res)));
+            }
+
             curl_easy_cleanup(curl);
-            throw ApiRequestException("cURL error: " + string(curl_easy_strerror(res)));
+        } else {
+            throw ApiRequestException("Failed to initialize cURL");
         }
 
-        curl_easy_cleanup(curl);
-    } else {
-        throw ApiRequestException("Failed to initialize cURL");
+    } catch (const ApiRequestException& e) {
+        // Ensure we clean up resources properly
+        if (curl) {
+            curl_easy_cleanup(curl);
+        }
+        // Rethrow the caught exception to the higher level
+        throw;
     }
 
     return neo_data;
 }
+
 
 // Function to load data from a local JSON file
 bool load_from_file(json& jsonData, const string& filename) {
