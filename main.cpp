@@ -20,11 +20,12 @@ const float WINDOW_CENTER_Y = 400;
 float timeElapsed = 0.0f;
 bool draggingSlider = false;
 
-class CustomException : public std::exception {
+// Custom exception to handle data processing errors
+class DataProcessingException : public std::exception {
 private:
     std::string message_;
 public:
-    CustomException(const std::string& msg) : message_(msg) {}
+    DataProcessingException(const std::string& msg) : message_(msg) {}
 
     const char* what() const noexcept override {
         return message_.c_str();
@@ -37,13 +38,13 @@ public:
     FileHandler(const std::string& filename) {
         file.open(filename);
         if (!file.is_open()) {
-            throw CustomException("Failed to open file: " + filename);
+            throw std::ios_base::failure("Failed to open file: " + filename);
         }
     }
 
     void write(const std::string& data) {
         if (!file.is_open()) {
-            throw CustomException("Attempt to write to a closed file.");
+            throw std::ios_base::failure("Attempt to write to a closed file.");
         }
         file << data;
     }
@@ -395,8 +396,7 @@ int main() {
             string apiKey = apiKeyEnv ? apiKeyEnv : "";
 
             if (apiKey.empty()) {
-                throw CustomException("API key is missing. Please set the API_KEY environment variable.");
-                return 1;
+                throw DataProcessingException("API key is missing. Please set the API_KEY environment variable.");
             }
 
             json jsonData;
@@ -404,26 +404,23 @@ int main() {
             string neo_data = fetch_neo_data(selectedDate, apiKey);
 
             if (neo_data.empty()) {
-                cerr << "Failed to fetch data from NASA API. Loading data from file..." << endl;
+                cout << "Failed to fetch data from NASA API. Loading data from file..." << endl;
                 if (!load_from_file(jsonData, "data.json")) {
-                    throw CustomException("Failed to load data from file.");
-                    return 1;
+                    throw DataProcessingException("Failed to load data from file.");
                 }
                 selectedNeoJson = process_neo_data(jsonData, selectedDate);
             } else {
                 try {
                     jsonData = json::parse(neo_data);
                     selectedNeoJson = process_neo_data(jsonData, selectedDate);
-                } catch (const exception& e) {
-                    throw CustomException("Error parsing data: " + std::string(e.what()));
-                    return 1;
+                } catch (const std::exception& e) {
+                    throw DataProcessingException("Error parsing data: " + std::string(e.what()));
                 }
             }
 
             if (!selectedNeoJson.empty()) {
                 try {
                     Asteroid asteroid1(selectedNeoJson);
-                    asteroid1.printInfo();
                     asteroid1.printInfoToFile(fileHandler);
 
                     bool asteroidMenu = true;
@@ -497,8 +494,8 @@ int main() {
                         }
                     }
 
-                } catch (const CustomException& e) {
-                    cerr << "Caught Exception: " << e.what() << endl;
+                } catch (const DataProcessingException& e) {
+                    cerr << "Caught Data Processing Exception: " << e.what() << endl;
                 } catch (const std::exception& e) {
                     cerr << "Error creating Asteroid object: " << e.what() << endl;
                 }
@@ -514,17 +511,18 @@ int main() {
                 cout << "Exiting the NEO Analyzer. Goodbye!" << endl;
             }
         }
-    } catch (const CustomException& e) {
-        cerr << "Custom Exception: " << e.what() << endl;
+    } catch (const DataProcessingException& e) {
+        cerr << "Data Processing Exception: " << e.what() << endl;
         return 1;
     } catch (const std::ios_base::failure& e) {
         cerr << "File operation error: " << e.what() << endl;
-        cerr << "Possible reasons: Invalid directory path or lack of permissions." << endl;
+        return 1;
+    } catch (const std::runtime_error& e) {
+        cerr << "Runtime Error: " << e.what() << endl;
         return 1;
     } catch (const std::exception& e) {
         cerr << "An unexpected error occurred: " << e.what() << endl;
         return 1;
     }
-
     return 0;
 }
