@@ -30,5 +30,6 @@ target_link_libraries(NEOAnalyzer PRIVATE sfml-graphics sfml-window sfml-system)
 # Include directories
 target_include_directories(NEOAnalyzer PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-# Copy .env file to the build directory
+# Copy other files to the build directory
 configure_file(${CMAKE_SOURCE_DIR}/.env ${CMAKE_BINARY_DIR}/.env COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/earth_image.png ${CMAKE_BINARY_DIR}/earth_image.png COPYONLY)
